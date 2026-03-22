@@ -1,13 +1,10 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ticket Marketplace</title>
-
-  <!-- Pi SDK -->
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-
   <style>
     :root {
       --bg: #f4f4f6;
@@ -21,7 +18,9 @@
       --success: #1e8e3e;
     }
 
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -43,12 +42,16 @@
       line-height: 1.1;
     }
 
+    h2 {
+      margin-top: 0;
+    }
+
     .card {
       background: var(--card);
       border-radius: 18px;
       padding: 20px;
       margin-bottom: 18px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
     }
 
     .status {
@@ -99,11 +102,6 @@
       color: #fff;
     }
 
-    .btn-secondary {
-      background: #ece7f7;
-      color: var(--purple);
-    }
-
     .ticket {
       border: 1px solid #eee;
       border-radius: 14px;
@@ -142,41 +140,40 @@
     <h1>Ticket Marketplace</h1>
 
     <div class="card">
-      <div id="loginStatus" class="status">Nicht eingeloggt</div>
+      <div id="loginStatus" class="status">Not logged in</div>
       <button id="loginBtn" class="btn-primary">Login with Pi</button>
       <div class="inline-note">
-        Sandbox/Testnet aktiv. Login und Payments laufen über das Pi SDK im Pi Browser.
+        Sandbox/Testnet is enabled. Login and payments run through the Pi SDK in the Pi Browser.
       </div>
     </div>
 
     <div class="card">
-      <h2>Ticket einstellen</h2>
+      <h2>List a Ticket</h2>
       <div class="row">
-        <input id="eventName" type="text" placeholder="Eventname" />
-        <input id="ticketPrice" type="number" step="0.01" min="0.01" placeholder="Preis in Pi" />
-        <textarea id="ticketDesc" placeholder="Kurzbeschreibung"></textarea>
-        <button id="listBtn" class="btn-gold">Ticket listen</button>
+        <input id="eventName" type="text" placeholder="Event name" />
+        <input id="ticketPrice" type="number" step="0.01" min="0.01" placeholder="Price in Pi" />
+        <textarea id="ticketDesc" placeholder="Short description"></textarea>
+        <button id="listBtn" class="btn-gold">List Ticket</button>
       </div>
       <div class="inline-note">
-        Plattformgebühr aktuell Demo: 8%.
+        Current platform fee demo: 8%.
       </div>
     </div>
 
     <div class="card">
-      <h2>Verfügbare Tickets</h2>
-      <div id="ticketList" class="muted">Noch keine Tickets vorhanden.</div>
+      <h2>Available Tickets</h2>
+      <div id="ticketList" class="muted">No tickets available yet.</div>
     </div>
   </div>
 
   <script>
-    // Pi SDK initialisieren
     const Pi = window.Pi;
     Pi.init({ version: "2.0", sandbox: true });
 
     let currentUser = null;
     let accessToken = null;
 
-    const STORAGE_KEY = "ticket_marketplace_demo_v2";
+    const STORAGE_KEY = "ticket_marketplace_demo_v2_en";
 
     function getTickets() {
       try {
@@ -204,22 +201,22 @@
       const tickets = getTickets().filter(t => !t.sold);
 
       if (!tickets.length) {
-        container.innerHTML = '<div class="muted">Noch keine Tickets vorhanden.</div>';
+        container.innerHTML = '<div class="muted">No tickets available yet.</div>';
         return;
       }
 
-      container.innerHTML = tickets.map((ticket, index) => {
+      container.innerHTML = tickets.map((ticket) => {
         const fee = ticket.price * 0.08;
         const sellerGets = ticket.price - fee;
 
         return `
           <div class="ticket">
             <h3>${escapeHtml(ticket.eventName)}</h3>
-            <p>${escapeHtml(ticket.description || "Keine Beschreibung")}</p>
-            <p><strong>Preis:</strong> ${ticket.price.toFixed(2)} Pi</p>
-            <p class="fee">Plattformgebühr: ${fee.toFixed(2)} Pi</p>
-            <p><strong>Verkäufer erhält:</strong> ${sellerGets.toFixed(2)} Pi</p>
-            <p class="muted">Erstellt von: ${escapeHtml(ticket.owner || "unbekannt")}</p>
+            <p>${escapeHtml(ticket.description || "No description provided")}</p>
+            <p><strong>Price:</strong> ${ticket.price.toFixed(2)} Pi</p>
+            <p class="fee">Platform fee: ${fee.toFixed(2)} Pi</p>
+            <p><strong>Seller receives:</strong> ${sellerGets.toFixed(2)} Pi</p>
+            <p class="muted">Listed by: ${escapeHtml(ticket.owner || "Unknown")}</p>
             <button class="btn-gold" onclick="buyTicket(${ticket.id})">Buy with Pi</button>
           </div>
         `;
@@ -231,8 +228,7 @@
         const scopes = ["username", "payments"];
 
         function onIncompletePaymentFound(payment) {
-          console.log("Unvollständige Zahlung gefunden:", payment);
-          // Für echte Produktion später sauber vervollständigen oder canceln
+          console.log("Incomplete payment found:", payment);
         }
 
         const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
@@ -240,16 +236,16 @@
         accessToken = auth.accessToken;
 
         document.getElementById("loginStatus").innerHTML =
-          `<span class="success">Eingeloggt als: ${escapeHtml(currentUser.username || "Pi User")}</span>`;
+          `<span class="success">Logged in as: ${escapeHtml(currentUser.username || "Pi User")}</span>`;
       } catch (error) {
-        console.error("Login fehlgeschlagen:", error);
-        alert("Pi Login fehlgeschlagen.");
+        console.error("Login failed:", error);
+        alert("Pi login failed.");
       }
     }
 
     function listTicket() {
       if (!currentUser) {
-        alert("Bitte zuerst mit Pi einloggen.");
+        alert("Please log in with Pi first.");
         return;
       }
 
@@ -258,7 +254,7 @@
       const description = document.getElementById("ticketDesc").value.trim();
 
       if (!eventName || !price || price <= 0) {
-        alert("Bitte Eventname und gültigen Preis eingeben.");
+        alert("Please enter an event name and a valid price.");
         return;
       }
 
@@ -283,7 +279,7 @@
 
     async function buyTicket(ticketId) {
       if (!currentUser) {
-        alert("Bitte zuerst mit Pi einloggen.");
+        alert("Please log in with Pi first.");
         return;
       }
 
@@ -291,7 +287,7 @@
       const ticket = tickets.find(t => t.id === ticketId);
 
       if (!ticket) {
-        alert("Ticket nicht gefunden.");
+        alert("Ticket not found.");
         return;
       }
 
@@ -309,32 +305,30 @@
         const paymentCallbacks = {
           onReadyForServerApproval(paymentId) {
             console.log("Ready for server approval:", paymentId);
-            // Später: an Backend senden zur Approve-Logik
           },
           onReadyForServerCompletion(paymentId, txid) {
             console.log("Ready for completion:", paymentId, txid);
-            // Demo-Logik: lokal als verkauft markieren
             const updated = getTickets().map(t =>
               t.id === ticketId ? { ...t, sold: true, txid: txid || null } : t
             );
             setTickets(updated);
             renderTickets();
-            alert("Zahlung erfolgreich (Sandbox/Demo).");
+            alert("Payment successful (Sandbox/Demo).");
           },
           onCancel(paymentId) {
             console.log("Payment cancelled:", paymentId);
-            alert("Zahlung abgebrochen.");
+            alert("Payment cancelled.");
           },
           onError(error, payment) {
             console.error("Payment error:", error, payment);
-            alert("Fehler bei der Zahlung.");
+            alert("Payment error.");
           }
         };
 
         await Pi.createPayment(paymentData, paymentCallbacks);
       } catch (error) {
-        console.error("createPayment Fehler:", error);
-        alert("Pi Payment konnte nicht gestartet werden.");
+        console.error("createPayment error:", error);
+        alert("Pi payment could not be started.");
       }
     }
 
