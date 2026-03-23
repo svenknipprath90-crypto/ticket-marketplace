@@ -1,74 +1,115 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Shop</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
-        .btn { width: 100%; padding: 15px; background: #673ab7; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        #status { margin-top: 20px; font-weight: bold; color: #673ab7; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background-color: #f4f7f6; color: #333; }
+        .card { background: white; padding: 30px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 380px; margin: 40px auto; border: 1px solid #e0e0e0; }
+        h1 { color: #673ab7; margin-bottom: 10px; }
+        .price-tag { font-size: 24px; font-weight: bold; margin: 20px 0; color: #2e7d32; }
+        .btn-pay { width: 100%; padding: 18px; background: #673ab7; color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 1.1em; transition: background 0.3s; }
+        .btn-pay:active { background: #4527a0; }
+        #status { margin-top: 25px; font-weight: 600; color: #673ab7; min-height: 40px; }
+        #error-log { margin-top: 15px; font-size: 12px; color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 8px; display: none; }
     </style>
 </head>
 <body>
+
     <div class="card">
         <h1>🎟️ Ticket Shop</h1>
-        <p>Klicke zum Bezahlen</p>
-        <button class="btn" onclick="run()">JETZT BEZAHLEN</button>
-        <div id="status">Bereit</div>
+        <p>Sicher bezahlen mit Pi Network</p>
+        <div class="price-tag">0.1 Pi</div>
+        
+        <button class="btn-pay" onclick="startPaymentProcess()">JETZT BEZAHLEN</button>
+        
+        <div id="status">Warte auf Initialisierung...</div>
+        <div id="error-log"></div>
     </div>
 
     <script>
         const statusEl = document.getElementById('status');
+        const errorEl = document.getElementById('error-log');
 
-        async function run() {
-            statusEl.innerText = "Verbinde...";
+        // Hilfsfunktion für Fehleranzeige
+        function showError(msg) {
+            errorEl.innerText = msg;
+            errorEl.style.display = 'block';
+        }
+
+        // 1. SDK Initialisierung beim Laden der Seite
+        window.onload = async function() {
             try {
-                // Versuche Init mit Version 1 - wenn das kracht, fangen wir es ab
-                try {
-                    await Pi.init({ version: "1" });
-                } catch(e) {
-                    console.log("Schon initialisiert oder Version egal");
+                if (typeof Pi === 'undefined') {
+                    statusEl.innerText = "Fehler: SDK nicht geladen!";
+                    return;
                 }
-
-                const auth = await Pi.authenticate(['payments'], onIncompletePayment);
-                statusEl.innerText = "Wallet wird geöffnet...";
-
-                await Pi.createPayment({
-                    amount: 0.1,
-                    memo: "Ticket Kauf",
-                    metadata: { type: "ticket" }
-                }, {
-                    onReadyForServerApproval: (id) => {
-                        fetch('/api/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, action: 'approve' })
-                        });
-                    },
-                    onReadyForServerCompletion: (id, txid) => {
-                        fetch('/api/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
-                        });
-                        statusEl.innerText = "✅ ERFOLG!";
-                    },
-                    onCancel: () => { statusEl.innerText = "Abgebrochen"; },
-                    onError: (e) => { statusEl.innerText = "Fehler: " + e.message; }
-                });
+                // Wir nutzen "1.5.0" - das ist die stabilste Version für den Pi Browser
+                await Pi.init({ version: "1.5.0", sandbox: false });
+                statusEl.innerText = "✅ System bereit";
             } catch (err) {
-                statusEl.innerText = "Fehler: " + err.message;
+                statusEl.innerText = "❌ Init-Fehler";
+                showError("Version Error: " + err.message);
+            }
+        };
+
+        async function startPaymentProcess() {
+            statusEl.innerText = "Authentifizierung...";
+            errorEl.style.display = 'none';
+
+            try {
+                // Login Abfrage
+                const scopes = ['payments'];
+                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                
+                statusEl.innerText = "Zahlung wird erstellt...";
+
+                // Zahlung starten
+                const payment = await Pi.createPayment({
+                    amount: 0.1,
+                    memo: "Kauf von 1x Ticket",
+                    metadata: { orderId: "TICKET-" + Date.now() },
+                }, {
+                    onReadyForServerApproval: function(paymentId) {
+                        statusEl.innerText = "Warte auf Server-Bestätigung...";
+                        return fetch('/api/approve-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId, action: 'approve' }),
+                        });
+                    },
+                    onReadyForServerCompletion: function(paymentId, txid) {
+                        statusEl.innerText = "✅ Zahlung erfolgreich!";
+                        return fetch('/api/approve-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId, action: 'complete', txid }),
+                        });
+                        alert("Ticket erfolgreich gekauft!");
+                    },
+                    onCancel: function(paymentId) {
+                        statusEl.innerText = "Zahlung abgebrochen.";
+                    },
+                    onError: function(error, payment) {
+                        statusEl.innerText = "❌ Fehler bei Zahlung";
+                        showError(error.message);
+                    },
+                });
+
+            } catch (err) {
+                statusEl.innerText = "❌ Fehler";
+                showError("Auth-Fehler: " + err.message);
             }
         }
 
-        function onIncompletePayment(payment) {
-            fetch('/api/approve-payment', {
+        // Falls eine Zahlung unterbrochen wurde
+        async function onIncompletePaymentFound(payment) {
+            return fetch('/api/approve-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
+                body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' }),
             });
         }
     </script>
