@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Marketplace Pi</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js?v=2026"></script>
+    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
         .container { background: white; padding: 40px; border-radius: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; border: 1px solid #ddd; }
@@ -17,9 +17,9 @@
 <body>
     <div class="container">
         <h1>🎟️ Ticket Marketplace</h1>
-        <p>Version: 2.0 (Cache-Breaker)</p>
+        <p>Version: 3.0 (Universal Fix)</p>
         <button class="btn-pay" onclick="pay()">Ticket kaufen (0.1 Pi)</button>
-        <div id="status-text">Status: Warte auf SDK-Start...</div>
+        <div id="status-text">Status: Kontaktiere Pi Network...</div>
         <div id="debug-text"></div>
     </div>
 
@@ -30,17 +30,24 @@
         async function startApp() {
             try {
                 if (typeof Pi === 'undefined') {
-                    statusEl.innerText = "SDK fehlt! Bitte Seite 3x neu laden.";
+                    statusEl.innerText = "SDK wird gesucht...";
                     return;
                 }
-                // Wir nutzen Version "1" - die stabilste für Vercel
-                await Pi.init({ version: "1" });
-                statusEl.innerText = "✅ SDK geladen! (Vercel)";
+
+                // Dieser String "1.5.0" ist die stabilste Version für den Browser
+                await Pi.init({ version: "1.5.0", sandbox: false });
+                statusEl.innerText = "✅ SDK verbunden!";
                 
                 Pi.authenticate(['payments'], onIncompletePaymentFound)
-                  .catch((e) => { debugEl.innerText = "Auth: " + e.message; });
+                  .catch((e) => { debugEl.innerText = "Login: " + e.message; });
             } catch (e) {
-                debugEl.innerText = "Init-Fehler: " + e.message;
+                // Wenn 1.5.0 fehlschlägt, versuchen wir als Backup die einfache "5"
+                try {
+                    await Pi.init({ version: "5", sandbox: false });
+                    statusEl.innerText = "✅ SDK verbunden (Alt-Modus)!";
+                } catch (e2) {
+                    debugEl.innerText = "Init-Fehler: " + e2.message;
+                }
             }
         }
 
@@ -53,7 +60,8 @@
         }
 
         function pay() {
-            const paymentData = { amount: 0.1, memo: "Test", metadata: { type: "test" } };
+            statusEl.innerText = "Zahlung wird aufgerufen...";
+            const paymentData = { amount: 0.1, memo: "Test Ticket", metadata: { type: "test" } };
             const callbacks = {
                 onReadyForServerApproval: (id) => {
                     fetch('/api/approve-payment', {
@@ -68,7 +76,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
                     });
-                    alert("Erfolg!");
+                    alert("Zahlung erfolgreich!");
                 },
                 onCancel: () => { statusEl.innerText = "Abgebrochen"; },
                 onError: (error) => { debugEl.innerText = "Fehler: " + error.message; }
@@ -76,7 +84,8 @@
             Pi.createPayment(paymentData, callbacks);
         }
 
-        setTimeout(startApp, 1500); 
+        // Wir rufen es sofort auf, sobald das Script bereit ist
+        startApp();
     </script>
 </body>
 </html>
