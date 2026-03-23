@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,35 +15,33 @@
 <body>
     <div class="card">
         <h1>🎟️ Ticket Shop</h1>
-        <p>Version 5.0 - Finaler Versuch</p>
-        <button class="btn" onclick="pay()">JETZT BEZAHLEN</button>
+        <p>Klicke zum Bezahlen</p>
+        <button class="btn" onclick="run()">JETZT BEZAHLEN</button>
         <div id="status">Bereit</div>
     </div>
 
     <script>
         const statusEl = document.getElementById('status');
 
-        // Nur eine einzige, simple Initialisierung
-        try {
-            Pi.init({ version: "1" });
-            statusEl.innerText = "✅ System bereit";
-        } catch (e) {
-            statusEl.innerText = "Lade...";
-        }
-
-        async function pay() {
-            statusEl.innerText = "Zahlung startet...";
+        async function run() {
+            statusEl.innerText = "Verbinde...";
             try {
-                // Login und Zahlung in einem Rutsch
-                await Pi.authenticate(['payments'], onIncompletePayment);
-                
-                Pi.createPayment({
+                // Versuche Init mit Version 1 - wenn das kracht, fangen wir es ab
+                try {
+                    await Pi.init({ version: "1" });
+                } catch(e) {
+                    console.log("Schon initialisiert oder Version egal");
+                }
+
+                const auth = await Pi.authenticate(['payments'], onIncompletePayment);
+                statusEl.innerText = "Wallet wird geöffnet...";
+
+                await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Ticket",
-                    metadata: { type: "test" }
+                    memo: "Ticket Kauf",
+                    metadata: { type: "ticket" }
                 }, {
                     onReadyForServerApproval: (id) => {
-                        statusEl.innerText = "Warte auf Server...";
                         fetch('/api/approve-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -51,13 +49,12 @@
                         });
                     },
                     onReadyForServerCompletion: (id, txid) => {
-                        statusEl.innerText = "✅ ERFOLG!";
                         fetch('/api/approve-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
                         });
-                        alert("Ticket gekauft!");
+                        statusEl.innerText = "✅ ERFOLG!";
                     },
                     onCancel: () => { statusEl.innerText = "Abgebrochen"; },
                     onError: (e) => { statusEl.innerText = "Fehler: " + e.message; }
