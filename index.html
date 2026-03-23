@@ -3,81 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ticket Marketplace - Checklist Fix</title>
+  <title>Final Fix</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
-    :root { --purple: #6f2dbd; --gold: #f0ad3d; --bg: #f4f4f6; }
-    body { font-family: sans-serif; background: var(--bg); padding: 20px; text-align: center; color: #333; }
-    .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 450px; margin-left: auto; margin-right: auto; }
-    h1 { color: var(--purple); font-size: 28px; }
-    button { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; transition: background 0.2s; }
-    .btn-auth { background: var(--purple); color: white; }
-    .btn-pay { background: var(--gold); color: white; }
-    .success { color: #1e8e3e; font-weight: bold; margin-top: 10px; }
-    .note { font-size: 12px; color: #666; margin-top: 5px; }
+    body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f6; }
+    .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+    button { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+    .btn-auth { background: #6f2dbd; color: white; }
+    .btn-pay { background: #f0ad3d; color: white; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Ticket Marketplace Pi</h1>
-    
-    <div class="card">
-      <div id="status">Please authenticate</div>
-      <button id="loginBtn" class="btn-auth">1. Login & Sync</button>
-      <div class="note">Make sure sandbox: true is active in the code.</div>
-    </div>
-
-    <div class="card">
-      <h3>Step 10: Complete Test Transaction</h3>
-      <p style="font-size: 14px;">This will trigger a 0.1 Test-Pi payment. After completing, your checklist will update.</p>
-      <button onclick="createTestPayment()" class="btn-pay">2. Pay 0.1 Pi (Testnet)</button>
-    </div>
+  <div class="card">
+    <h2>Checklist Step 10</h2>
+    <div id="user">Please Login</div>
+    <button class="btn-auth" onclick="login()">1. Login</button>
+    <button class="btn-pay" onclick="pay()">2. Pay 0.1 Test-Pi</button>
   </div>
 
   <script>
     const Pi = window.Pi;
-    Pi.init({ version: "2.0", sandbox: true }); // keep sandbox:true for the checklist test
-
-    // Dein API Key ist hier hinterlegt
-    const MY_API_KEY = "S6afxximhrdrhci5jayyntvewmkddzictz0h5pis8bq1pxsofr8vthnllt9yvh9k"; 
+    Pi.init({ version: "2.0", sandbox: true });
 
     async function login() {
       try {
         const auth = await Pi.authenticate(['username', 'payments'], (payment) => {
-          // Automatic recovery if an old payment is stuck
-          console.log("Incomplete payment found. System will handle it:", payment);
+          // Falls eine Zahlung hängt, versuchen wir sie hier zu loggen
+          console.log("Stuck payment:", payment);
         });
-        document.getElementById('status').innerHTML = `<span class="success">✅ Logged in: ${auth.user.username}</span>`;
-        alert("Authentication successful! Now try the payment.");
-      } catch (e) { 
-        alert("Authentication failed. Make sure to open this app inside the Pi Browser!"); 
-      }
+        document.getElementById('user').innerText = "Logged in: " + auth.user.username;
+      } catch (e) { alert("Login failed!"); }
     }
 
-    async function createTestPayment() {
+    async function pay() {
       try {
         await Pi.createPayment({
           amount: 0.1,
-          memo: "Verification for Step 10",
-          metadata: { id: "test-" + Date.now() } // unique ID every time!
+          memo: "Checklist Test " + Math.random().toString(36).substring(7),
+          metadata: { test: "123" }
         }, {
-          onReadyForServerApproval: (paymentId) => {
-            console.log("Payment initiated locally (Frontend):", paymentId);
-            // HINWEIS: Im Sandbox-Modus, wenn die URLs identisch sind,
-            // sollte das Pi-System die Wallet nun automatisch öffnen.
+          onReadyForServerApproval: (id) => {
+            console.log("Payment ID created:", id);
+            // Hier liegt das Problem: Ohne Server kommt kein 'Approve'.
+            // Im Sandbox-Modus sollte Pi dies nach ca. 10-15 Sek selbst tun.
           },
-          onReadyForServerCompletion: (paymentId, txid) => {
-            alert("SUCCESS! Transaction completed.\nTXID: " + txid + "\nYour checklist should update shortly.");
+          onReadyForServerCompletion: (id, txid) => {
+            alert("SUCCESS! TXID: " + txid);
           },
-          onCancel: (pId) => console.log("Payment cancelled", pId),
+          onCancel: (id) => console.log("Cancelled"),
           onError: (err) => alert("Error: " + err.message)
         });
-      } catch (e) { 
-        alert("Payment initialization failed."); 
-      }
+      } catch (e) { alert("Payment error"); }
     }
-
-    document.getElementById('loginBtn').onclick = login;
   </script>
 </body>
 </html>
