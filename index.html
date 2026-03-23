@@ -3,43 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FORCE CLEANUP</title>
+    <title>Ticket Marketplace Pi</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #fff0f0; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-width: 400px; margin: auto; }
-        button { width: 100%; padding: 20px; background: #e63946; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 18px; }
-        #log { margin-top: 20px; text-align: left; font-size: 12px; background: #eee; padding: 10px; border-radius: 5px; min-height: 50px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
+        .container { background: white; padding: 40px; border-radius: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); max-width: 400px; margin: 40px auto; border: 1px solid #ddd; }
+        h1 { color: #673ab7; font-size: 24px; margin-bottom: 20px; }
+        .status-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 15px; padding: 15px; margin-bottom: 25px; font-size: 0.9em; color: #555; }
+        .btn-pay { width: 100%; padding: 18px; background: #673ab7; color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; font-size: 1.2em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.3); }
+        .btn-pay:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(103, 58, 183, 0.3); }
+        #log { margin-top: 20px; font-size: 0.8em; color: #888; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>🚨 Force Cleanup</h1>
-        <p>Klicke diesen Button, um die hängende Zahlung (TXID: 3564c5b...) im Backend zu beenden.</p>
-        <button onclick="forceComplete()">JETZT ABSCHLIESSEN</button>
-        <div id="log">Warte auf Klick...</div>
+    <div class="container">
+        <h1>🎟️ Ticket Marketplace</h1>
+        <div class="status-box" id="status-text">
+            System bereit.<br>Bitte klicke auf den Button unten.
+        </div>
+        
+        <button class="btn-pay" onclick="pay()">Ticket kaufen (0.1 Pi)</button>
+        
+        <div id="log">Status: Bereit für Testzahlung</div>
     </div>
 
     <script>
-        async function forceComplete() {
-            const log = document.getElementById('log');
-            const paymentId = "3564c5bd63008467b65ecd538289f5e61d30f32352c9138b47919692a473fb97"; // Deine ID aus dem Screenshot
-            
-            log.innerText = "Sende Befehl an Backend...";
-            
+        const Pi = window.Pi;
+        Pi.init({ version: "1.5", sandbox: false });
+
+        // Automatischer Login & Cleanup beim Start
+        async function auth() {
             try {
-                const response = await fetch('/.netlify/functions/approve-payment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ paymentId: paymentId, action: 'complete' })
-                });
-                const result = await response.json();
-                log.innerText = "Antwort vom Server: " + JSON.stringify(result);
-                alert("Befehl gesendet! Bitte jetzt 5 Minuten warten und dann im Portal prüfen.");
-            } catch (e) {
-                log.innerText = "Fehler: " + e.message;
+                await Pi.authenticate(['payments'], onIncompletePaymentFound);
+            } catch (err) {
+                console.error("Auth Fehler:", err);
             }
         }
+
+        async function onIncompletePaymentFound(payment) {
+            document.getElementById('log').innerText = "Alte Zahlung gefunden, schließe ab...";
+            await fetch('/.netlify/functions/approve-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
+            });
+            document.getElementById('log').innerText = "Bereinigung abgeschlossen.";
+        }
+
+        function pay() {
+            const paymentData = {
+                amount: 0.1,
+                memo: "Finaler Checkliste Test",
+                metadata: { type: "test_final" }
+            };
+
+            const callbacks = {
+                onReadyForServerApproval: (paymentId) => {
+                    document.getElementById('log').innerText = "Zahlung wird genehmigt...";
+                    fetch('/.netlify/functions/approve-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId: paymentId, action: 'approve' })
+                    });
+                },
+                onReadyForServerCompletion: (paymentId, txid) => {
+                    document.getElementById('log').innerText = "Blockchain-Erfolg! Schließe ab...";
+                    fetch('/.netlify/functions/approve-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ paymentId: paymentId, action: 'complete', txid: txid })
+                    });
+                    alert("Glückwunsch! Zahlung abgeschlossen.\nTXID: " + txid);
+                    document.getElementById('status-text').innerHTML = "<b>Erfolg!</b><br>Gehe jetzt ins Developer Portal.";
+                },
+                onCancel: (paymentId) => { document.getElementById('log').innerText = "Abgebrochen."; },
+                onError: (error, payment) => { 
+                    console.error("Fehler", error); 
+                    document.getElementById('log').innerText = "Fehler: " + error.message;
+                }
+            };
+
+            Pi.createPayment(paymentData, callbacks);
+        }
+
+        auth();
     </script>
 </body>
 </html>
