@@ -15,15 +15,16 @@ exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
     const paymentId = body.paymentId;
+    // Wir schauen, ob wir nur genehmigen oder direkt abschließen sollen
+    const action = body.action || 'approve'; 
     
-    // DEIN AKTUELLER API-KEY
     const apiKey = "s6afxximhrdrhci5jayyntvewmkddzictz0h5pis8bq1pxsofr8vthnllt9yvh9k";
 
-    console.log("Genehmige Zahlung ID:", paymentId);
+    console.log(`${action.toUpperCase()} für ID: ${paymentId}`);
 
-    // Pi API Aufruf zum Approve
+    // Pi API Aufruf (entweder /approve oder /complete)
     const response = await axios.post(
-      `https://api.minepi.com/v2/payments/${paymentId}/approve`,
+      `https://api.minepi.com/v2/payments/${paymentId}/${action}`,
       {},
       { headers: { 'Authorization': `Key ${apiKey}` } }
     );
@@ -31,14 +32,14 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ message: "Approved", data: response.data })
+      body: JSON.stringify({ message: "Success", action: action, data: response.data })
     };
   } catch (error) {
     console.error("Fehler:", error.response ? error.response.data : error.message);
     return {
-      statusCode: 500,
+      statusCode: 200, // Wir bleiben bei 200, um den Browser-Prozess nicht zu killen
       headers,
-      body: JSON.stringify({ error: "Approval failed" })
+      body: JSON.stringify({ error: "Operation failed" })
     };
   }
 };
