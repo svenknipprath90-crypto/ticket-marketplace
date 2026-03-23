@@ -6,18 +6,18 @@
     <title>Ticket Marketplace</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; color: #333; }
         .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
         .btn { width: 100%; padding: 15px; background: #673ab7; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1em; margin-top: 20px; }
         #status { margin-top: 20px; font-weight: bold; color: #673ab7; }
-        #user-info { font-size: 0.9em; color: #555; margin-bottom: 10px; }
+        #user-info { font-size: 1em; color: #555; margin-bottom: 15px; padding: 10px; background: #eee; border-radius: 10px; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>🎟️ Ticket Shop</h1>
-        <div id="user-info">Lade Profil...</div>
-        <div id="status">Verbinde mit Pi Network...</div>
+        <div id="user-info">Prüfe Login...</div>
+        <div id="status">Warte auf Pi Network...</div>
         
         <button class="btn" onclick="startPayment()">JETZT BEZAHLEN (0.1 Pi)</button>
     </div>
@@ -26,34 +26,39 @@
         const statusEl = document.getElementById('status');
         const userEl = document.getElementById('user-info');
 
-        // Automatischer Start beim Laden der Seite
+        // Startet sofort beim Laden
         window.onload = async function() {
             try {
-                // Initialisierung mit Version 1.5.0 (Standard für Pi Browser)
-                await Pi.init({ version: "1.5.0" });
+                // Initialisierung
+                await Pi.init({ version: "1.5" });
                 statusEl.innerText = "System bereit";
 
-                // Sofortiger Login, damit der Username erscheint
+                // Login erzwingen (damit Username erscheint)
                 const auth = await Pi.authenticate(['payments'], onIncompletePayment);
-                userEl.innerText = "Eingeloggt als: " + auth.user.username;
-                console.log("Login erfolgreich für: " + auth.user.username);
+                userEl.innerText = "👤 " + auth.user.username;
+                statusEl.innerText = "Bereit zum Kauf";
             } catch (err) {
-                // Wenn die Version nicht erkannt wird, versuchen wir es trotzdem weiter
-                statusEl.innerText = "Hinweis: " + err.message;
-                console.error(err);
+                // Falls Init fehlschlägt, zeigen wir es an, versuchen aber den Login trotzdem
+                statusEl.innerText = "Verbindung eingeschränkt";
+                console.log("Init Fehler, versuche Login...");
+                try {
+                    const auth = await Pi.authenticate(['payments'], onIncompletePayment);
+                    userEl.innerText = "👤 " + auth.user.username;
+                } catch(e) {
+                    userEl.innerText = "Login erforderlich";
+                }
             }
         };
 
         async function startPayment() {
-            statusEl.innerText = "Zahlung wird gestartet...";
+            statusEl.innerText = "Öffne Wallet...";
             try {
                 const payment = await Pi.createPayment({
                     amount: 0.1,
                     memo: "Ticket Kauf",
-                    metadata: { type: "ticket_sale" }
+                    metadata: { order: "ticket_123" }
                 }, {
                     onReadyForServerApproval: (id) => {
-                        statusEl.innerText = "Warte auf Genehmigung...";
                         return fetch('/api/approve-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -61,19 +66,18 @@
                         });
                     },
                     onReadyForServerCompletion: (id, txid) => {
-                        statusEl.innerText = "Zahlung abgeschlossen!";
+                        statusEl.innerText = "✅ Erfolg!";
                         return fetch('/api/approve-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
                         });
-                        alert("Erfolg! Dein Ticket ist bereit.");
                     },
                     onCancel: () => { statusEl.innerText = "Abgebrochen"; },
                     onError: (e) => { statusEl.innerText = "Fehler: " + e.message; }
                 });
             } catch (err) {
-                statusEl.innerText = "Zahlungsfehler: " + err.message;
+                statusEl.innerText = "Fehler: " + err.message;
             }
         }
 
