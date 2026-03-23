@@ -8,7 +8,7 @@
   <style>
     :root { --purple: #6f2dbd; --gold: #f0ad3d; --bg: #f4f4f6; }
     body { font-family: sans-serif; background: var(--bg); padding: 20px; text-align: center; }
-    .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 500px; margin-left: auto; margin-right: auto; }
+    .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
     button { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
     .btn-pi { background: var(--purple); color: white; }
     .btn-buy { background: var(--gold); color: white; }
@@ -17,101 +17,79 @@
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="card">
     <h1>Ticket Marketplace</h1>
-    
-    <div class="card">
-      <div id="status">Not logged in</div>
-      <button id="loginBtn" class="btn-pi">1. Login with Pi</button>
-    </div>
-
-    <div class="card">
-      <h3>2. List a Ticket</h3>
-      <input id="name" placeholder="Event Name (e.g. Concert)">
-      <input id="price" type="number" step="0.01" placeholder="Price in Pi (e.g. 0.1)">
-      <button onclick="addTicket()" class="btn-pi">List Ticket</button>
-    </div>
-
-    <div class="card">
-      <h3>3. Available Tickets</h3>
-      <div id="list">No tickets available.</div>
-    </div>
+    <div id="status">Not logged in</div>
+    <button id="loginBtn" class="btn-pi">1. Login with Pi</button>
   </div>
+
+  <div class="card">
+    <h3>2. Create Test Ticket</h3>
+    <input id="name" value="Checklist Test">
+    <input id="price" type="number" value="0.1">
+    <button onclick="addTicket()" class="btn-pi">Add Ticket</button>
+  </div>
+
+  <div id="list" class="card">No tickets.</div>
 
   <script>
     const Pi = window.Pi;
-    // Keep sandbox: true for the checklist verification
     Pi.init({ version: "2.0", sandbox: true });
 
     let user = null;
-    let tickets = JSON.parse(localStorage.getItem('pi_tickets_simple') || '[]');
+    let tickets = [];
 
     async function login() {
       try {
         const auth = await Pi.authenticate(['username', 'payments'], (p) => {
-          console.log("Incomplete payment found:", p);
+          console.log("Incomplete payment:", p);
         });
         user = auth.user;
-        document.getElementById('status').innerHTML = `<b style="color:green">Logged in as: ${user.username}</b>`;
+        document.getElementById('status').innerHTML = `<b style="color:green">Logged in: ${user.username}</b>`;
         render();
-      } catch (e) { 
-        alert("Login failed. Please open this app inside the Pi Browser!"); 
-      }
+      } catch (e) { alert("Login failed. Open in Pi Browser!"); }
     }
 
     function addTicket() {
-      const n = document.getElementById('name').value;
-      const p = parseFloat(document.getElementById('price').value);
-      if(!n || isNaN(p)) return alert("Please enter a valid name and price");
-      tickets.push({ id: Date.now(), name: n, price: p });
-      localStorage.setItem('pi_tickets_simple', JSON.stringify(tickets));
+      tickets.push({ id: Date.now(), name: document.getElementById('name').value, price: parseFloat(document.getElementById('price').value) });
       render();
     }
 
     function render() {
       const div = document.getElementById('list');
-      if(tickets.length === 0) {
-        div.innerHTML = "No tickets available.";
-        return;
-      }
       div.innerHTML = tickets.map(t => `
         <div class="ticket">
-          <strong>${t.name}</strong><br>Price: ${t.price} Pi<br>
-          <button class="btn-buy" onclick="pay(${t.id})">BUY (Test-Payment)</button>
+          <strong>${t.name}</strong> - ${t.price} Pi<br>
+          <button class="btn-buy" onclick="pay(${t.id})">BUY NOW</button>
         </div>
       `).join('');
     }
 
     async function pay(id) {
-      if(!user) return alert("Please login first!");
+      if(!user) return alert("Login first!");
       const t = tickets.find(x => x.id === id);
       
       try {
-        await Pi.createPayment({
+        const payment = await Pi.createPayment({
           amount: t.price,
-          memo: "Test Purchase: " + t.name,
+          memo: "Testing checklist",
           metadata: { ticketId: id }
         }, {
           onReadyForServerApproval: (paymentId) => {
-            console.log("Payment started, ID:", paymentId);
-            // In Sandbox/Demo mode, this is handled via the Developer Portal settings
+            console.log("Payment created. Waiting for Pi Server to auto-approve in sandbox...");
+            // Im Sandbox-Modus übernimmt das Portal das Approve oft automatisch,
+            // wenn die URLs (Netlify) exakt übereinstimmen.
           },
           onReadyForServerCompletion: (paymentId, txid) => {
-            alert("SUCCESS! Transaction completed.\nTXID: " + txid);
-            tickets = tickets.filter(x => x.id !== id);
-            localStorage.setItem('pi_tickets_simple', JSON.stringify(tickets));
-            render();
+            alert("SUCCESS! Check your Checklist now!");
           },
-          onCancel: (pId) => console.log("Payment cancelled", pId),
+          onCancel: (pId) => console.log("Cancelled"),
           onError: (err, p) => alert("Error: " + err.message)
         });
-      } catch (e) { 
-        alert("Could not start payment."); 
-      }
+      } catch (e) { alert("Payment error"); }
     }
 
     document.getElementById('loginBtn').onclick = login;
-    render();
   </script>
 </body>
 </html>
