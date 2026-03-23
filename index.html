@@ -6,32 +6,29 @@
     <title>Ticket Marketplace Pi</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
-        .container { background: white; padding: 40px; border-radius: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.12); max-width: 400px; margin: 40px auto; border: 1px solid #ddd; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
+        .container { background: white; padding: 40px; border-radius: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; border: 1px solid #ddd; }
         h1 { color: #673ab7; font-size: 24px; margin-bottom: 20px; }
-        .status-box { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 15px; padding: 15px; margin-bottom: 25px; font-size: 0.9em; color: #555; }
         .btn-pay { width: 100%; padding: 18px; background: #673ab7; color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; font-size: 1.2em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.3); }
-        .btn-pay:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(103, 58, 183, 0.3); }
-        #log { margin-top: 20px; font-size: 0.8em; color: #888; }
+        .btn-pay:active { transform: scale(0.96); }
+        #status-text { margin-top: 20px; font-size: 0.9em; color: #666; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎟️ Ticket Marketplace</h1>
-        <div class="status-box" id="status-text">
-            System bereit.<br>Bitte klicke auf den Button unten.
-        </div>
+        <p>Willkommen beim Test-Kauf!</p>
         
         <button class="btn-pay" onclick="pay()">Ticket kaufen (0.1 Pi)</button>
         
-        <div id="log">Status: Bereit für Testzahlung</div>
+        <div id="status-text">Status: Bereit (Vercel)</div>
     </div>
 
     <script>
         const Pi = window.Pi;
         Pi.init({ version: "1.5", sandbox: false });
 
-        // Automatischer Login & Cleanup beim Start
+        // Automatischer Login & Cleanup (jetzt über /api/)
         async function auth() {
             try {
                 await Pi.authenticate(['payments'], onIncompletePaymentFound);
@@ -41,46 +38,41 @@
         }
 
         async function onIncompletePaymentFound(payment) {
-            document.getElementById('log').innerText = "Alte Zahlung gefunden, schließe ab...";
-            await fetch('/.netlify/functions/approve-payment', {
+            console.log("Hängende Zahlung gefunden...");
+            await fetch('/api/approve-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
             });
-            document.getElementById('log').innerText = "Bereinigung abgeschlossen.";
         }
 
         function pay() {
             const paymentData = {
                 amount: 0.1,
-                memo: "Finaler Checkliste Test",
-                metadata: { type: "test_final" }
+                memo: "Vercel Testzahlung",
+                metadata: { type: "vercel_test" }
             };
 
             const callbacks = {
                 onReadyForServerApproval: (paymentId) => {
-                    document.getElementById('log').innerText = "Zahlung wird genehmigt...";
-                    fetch('/.netlify/functions/approve-payment', {
+                    document.getElementById('status-text').innerText = "Warte auf Genehmigung...";
+                    fetch('/api/approve-payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ paymentId: paymentId, action: 'approve' })
                     });
                 },
                 onReadyForServerCompletion: (paymentId, txid) => {
-                    document.getElementById('log').innerText = "Blockchain-Erfolg! Schließe ab...";
-                    fetch('/.netlify/functions/approve-payment', {
+                    document.getElementById('status-text').innerText = "Zahlung wird finalisiert...";
+                    fetch('/api/approve-payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ paymentId: paymentId, action: 'complete', txid: txid })
                     });
-                    alert("Glückwunsch! Zahlung abgeschlossen.\nTXID: " + txid);
-                    document.getElementById('status-text').innerHTML = "<b>Erfolg!</b><br>Gehe jetzt ins Developer Portal.";
+                    alert("Zahlung erfolgreich!\nTXID: " + txid);
                 },
-                onCancel: (paymentId) => { document.getElementById('log').innerText = "Abgebrochen."; },
-                onError: (error, payment) => { 
-                    console.error("Fehler", error); 
-                    document.getElementById('log').innerText = "Fehler: " + error.message;
-                }
+                onCancel: (paymentId) => { document.getElementById('status-text').innerText = "Abgebrochen."; },
+                onError: (error, payment) => { alert("Fehler: " + error.message); }
             };
 
             Pi.createPayment(paymentData, callbacks);
