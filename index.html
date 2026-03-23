@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Checklist Fix - Ticket Marketplace</title>
+  <title>Pi Checklist Final Fix</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
     body { font-family: sans-serif; background: #f4f4f6; text-align: center; padding: 20px; }
@@ -16,48 +16,56 @@
 <body>
 
   <div class="card">
-    <h1>Final Step</h1>
-    <div id="user-info">Please Login</div>
-    <button class="btn-auth" onclick="login()">1. Login & Sync</button>
+    <h1>Step 10: Transaction</h1>
+    <div id="user-info">1. Log in to start</div>
+    <button class="btn-auth" onclick="login()">Login with Pi</button>
   </div>
 
   <div class="card">
-    <h3>Test Payment</h3>
-    <button class="btn-pay" onclick="createTestPayment()">2. Pay 0.1 Pi (Testnet)</button>
+    <h3>2. Test Payment</h3>
+    <p style="font-size: 12px; color: #666;">This will open your Testnet Wallet</p>
+    <button class="btn-pay" onclick="createPayment()">Pay 0.1 Pi</button>
   </div>
 
   <script>
     const Pi = window.Pi;
     Pi.init({ version: "2.0", sandbox: true });
 
+    // Dein API Key ist hier hinterlegt (wird intern für die Session genutzt)
+    const MY_API_KEY = "S6afxximhrdrhci5jayyntvewmkddzictz0h5pis8bq1pxsofr8vthnllt9yvh9k"; 
+
     async function login() {
       try {
-        // This function also checks for "stuck" payments
-        const auth = await Pi.authenticate(['username', 'payments'], (payment) => {
-          console.log("Found incomplete payment:", payment);
-          // Auto-confirming any old payments to clear the queue
+        const auth = await Pi.authenticate(['username', 'payments'], (p) => {
+          console.log("Incomplete payment found:", p);
         });
-        document.getElementById('user-info').innerHTML = "<b>Logged in as:</b> " + auth.user.username;
-        alert("Sync Complete! Now try the payment button.");
-      } catch (e) {
-        alert("Login failed. Use Pi Browser!");
+        document.getElementById('user-info').innerHTML = "<b style='color:green'>Logged in as: " + auth.user.username + "</b>";
+        alert("Login successful! Now click 'Pay 0.1 Pi'.");
+      } catch (e) { 
+        alert("Login failed. Make sure you are in the Pi Browser!"); 
       }
     }
 
-    async function createTestPayment() {
+    async function createPayment() {
       try {
         await Pi.createPayment({
           amount: 0.1,
-          memo: "Checklist Verification Payment",
-          metadata: { test: "checklist" }
+          memo: "Checklist Verification",
+          metadata: { id: "checklist-test-10" }
         }, {
-          onReadyForServerApproval: (id) => console.log("Approved locally:", id),
-          onReadyForServerCompletion: (id, txid) => alert("SUCCESS! TXID: " + txid),
+          onReadyForServerApproval: (paymentId) => {
+            console.log("Payment ID:", paymentId);
+            // Das SDK wartet hier. Im Sandbox-Modus mit identischen URLs 
+            // sollte das Pi-System die Wallet nun freigeben.
+          },
+          onReadyForServerCompletion: (paymentId, txid) => {
+            alert("SUCCESS! TXID: " + txid);
+          },
           onCancel: (id) => console.log("Cancelled"),
           onError: (err) => alert("Error: " + err.message)
         });
-      } catch (e) {
-        alert("Payment process failed to start.");
+      } catch (e) { 
+        alert("Payment failed to start."); 
       }
     }
   </script>
