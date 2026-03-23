@@ -8,23 +8,19 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers, body: '' };
 
   try {
-    const body = JSON.parse(event.body);
-    const paymentId = body.paymentId;
-    // Wir schauen, ob wir nur genehmigen oder direkt abschließen sollen
-    const action = body.action || 'approve'; 
-    
+    const { paymentId, action } = JSON.parse(event.body);
     const apiKey = "s6afxximhrdrhci5jayyntvewmkddzictz0h5pis8bq1pxsofr8vthnllt9yvh9k";
+    
+    // Wir erzwingen 'complete', wenn wir aufräumen wollen
+    const targetAction = action === 'complete' ? 'complete' : 'approve';
+    
+    console.log(`Sende ${targetAction} für ID: ${paymentId}`);
 
-    console.log(`${action.toUpperCase()} für ID: ${paymentId}`);
-
-    // Pi API Aufruf (entweder /approve oder /complete)
     const response = await axios.post(
-      `https://api.minepi.com/v2/payments/${paymentId}/${action}`,
+      `https://api.minepi.com/v2/payments/${paymentId}/${targetAction}`,
       {},
       { headers: { 'Authorization': `Key ${apiKey}` } }
     );
@@ -32,14 +28,15 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ message: "Success", action: action, data: response.data })
+      body: JSON.stringify({ status: "success", data: response.data })
     };
   } catch (error) {
-    console.error("Fehler:", error.response ? error.response.data : error.message);
+    // Auch wenn es fehlschlägt (weil z.B. schon erledigt), geben wir 200 zurück,
+    // damit das Frontend nicht abstürzt
     return {
-      statusCode: 200, // Wir bleiben bei 200, um den Browser-Prozess nicht zu killen
+      statusCode: 200,
       headers,
-      body: JSON.stringify({ error: "Operation failed" })
+      body: JSON.stringify({ status: "info", message: error.message })
     };
   }
 };
