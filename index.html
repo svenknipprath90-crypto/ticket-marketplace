@@ -1,89 +1,89 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Step 10 Final Fix</title>
+    <title>Pi Step 10 Fix - Backend Mode</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f6; color: #333; }
         .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; }
-        h1 { color: #6f2dbd; margin-bottom: 20px; }
-        button { width: 100%; padding: 16px; margin: 12px 0; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: transform 0.1s; }
-        button:active { transform: scale(0.98); }
+        h1 { color: #6f2dbd; font-size: 22px; margin-bottom: 20px; }
+        button { width: 100%; padding: 16px; margin: 12px 0; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; transition: background 0.2s; }
         .btn-auth { background: #6f2dbd; color: white; }
         .btn-pay { background: #f0ad3d; color: white; }
-        #status { margin-bottom: 15px; font-weight: bold; min-height: 24px; }
-        .success-text { color: #28a745; }
+        #status { margin-bottom: 15px; font-weight: bold; min-height: 24px; color: #555; }
+        .loader { color: #6f2dbd; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>Pi Checklist Fix</h1>
-        <div id="status">Bitte einloggen...</div>
+        <h1>Pi Checklist Final Fix</h1>
+        <div id="status">Bereit für den Test...</div>
         
         <button class="btn-auth" onclick="login()">1. Login & Sync</button>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
         <button class="btn-pay" onclick="createPayment()">2. Pay 0.1 Test-Pi</button>
         
-        <p style="font-size: 12px; color: #888; margin-top: 20px;">
-            Hinweis: Nach Klick auf "Pay" kann es bis zu 15 Sek. dauern, bis die Wallet öffnet.
+        <p style="font-size: 11px; color: #999; margin-top: 20px;">
+            Modus: Backend-Service aktiv.<br>
+            Stelle sicher, dass du im Pi Browser bist.
         </p>
     </div>
 
     <script>
         const Pi = window.Pi;
-        // Sandbox Modus für Testnet Checklist
+        // Sandbox muss für Step 10 aktiv sein!
         Pi.init({ version: "2.0", sandbox: true });
 
         async function login() {
             try {
                 const auth = await Pi.authenticate(['username', 'payments'], (payment) => {
-                    console.log("Unvollständige Zahlung gefunden:", payment);
+                    console.log("Hängende Zahlung:", payment);
                 });
-                document.getElementById('status').innerHTML = '<span class="success-text">✅ Eingeloggt als: ' + auth.user.username + '</span>';
+                document.getElementById('status').innerHTML = "✅ Eingeloggt als: <span style='color:#6f2dbd'>" + auth.user.username + "</span>";
             } catch (e) {
-                alert("Login fehlgeschlagen. Nutze den Pi Browser!");
+                alert("Login fehlgeschlagen. Bitte Seite im Pi Browser neu laden!");
             }
         }
 
         async function createPayment() {
-            try {
-                const statusDiv = document.getElementById('status');
-                statusDiv.innerText = "Zahlung wird vorbereitet...";
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '<span class="loader">Verbinde mit Pi-Netzwerk...</span>';
 
+            try {
                 await Pi.createPayment({
                     amount: 0.1,
                     memo: "Checklist Step 10 Verification",
-                    metadata: { id: "payment-" + Date.now() }
+                    metadata: { id: "step-10-" + Date.now() }
                 }, {
                     onReadyForServerApproval: async (paymentId) => {
-                        console.log("Zahlung erstellt. ID:", paymentId);
-                        
-                        // Ruft deine Netlify Function auf, um die Zahlung zu genehmigen
+                        console.log("Zahlung erstellt, sende an Backend...");
+                        statusDiv.innerText = "Backend genehmigt Zahlung...";
+
+                        // RUFT DEINE NETLIFY FUNCTION AUF
                         try {
-                            const response = await fetch('/.netlify/functions/approve-payment', {
+                            await fetch('/.netlify/functions/approve-payment', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ paymentId })
                             });
-                            const data = await response.json();
-                            console.log("Server Approval Response:", data);
                         } catch (err) {
-                            console.error("Server-Verbindung fehlgeschlagen:", err);
+                            console.error("Backend-Ruf fehlgeschlagen:", err);
                         }
                     },
                     onReadyForServerCompletion: (paymentId, txid) => {
-                        statusDiv.innerHTML = '<span class="success-text">✅ ERFOLG! TXID gespeichert.</span>';
-                        alert("Zahlung erfolgreich!\nTXID: " + txid + "\nSchritt 10 sollte jetzt grün sein.");
+                        statusDiv.innerHTML = "<b style='color:green'>✅ ERFOLGREICH BEZAHLT!</b>";
+                        alert("Zahlung abgeschlossen!\nTXID: " + txid);
                     },
                     onCancel: (id) => {
                         statusDiv.innerText = "Zahlung abgebrochen.";
                     },
                     onError: (err) => {
+                        console.error("SDK Error:", err);
                         alert("Fehler: " + err.message);
-                        statusDiv.innerText = "Fehler aufgetreten.";
+                        statusDiv.innerText = "Ein Fehler ist aufgetreten.";
                     }
                 });
             } catch (e) {
