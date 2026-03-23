@@ -11,7 +11,8 @@
         h1 { color: #673ab7; font-size: 24px; margin-bottom: 20px; }
         .btn-pay { width: 100%; padding: 18px; background: #673ab7; color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; font-size: 1.2em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.3); }
         .btn-pay:active { transform: scale(0.96); }
-        #status-text { margin-top: 20px; font-size: 0.9em; color: #666; }
+        #status-text { margin-top: 20px; font-size: 1.1em; font-weight: bold; color: #673ab7; }
+        #debug-text { margin-top: 10px; font-size: 12px; color: #d32f2f; }
     </style>
 </head>
 <body>
@@ -21,64 +22,81 @@
         
         <button class="btn-pay" onclick="pay()">Ticket kaufen (0.1 Pi)</button>
         
-        <div id="status-text">Status: Bereit (Vercel)</div>
+        <div id="status-text">Status: Prüfe Verbindung...</div>
+        <div id="debug-text"></div>
     </div>
 
     <script>
-        const Pi = window.Pi;
-        Pi.init({ version: "1.5", sandbox: false });
+        const statusEl = document.getElementById('status-text');
+        const debugEl = document.getElementById('debug-text');
 
-        // Automatischer Login & Cleanup (jetzt über /api/)
-        async function auth() {
-            try {
-                await Pi.authenticate(['payments'], onIncompletePaymentFound);
-            } catch (err) {
-                console.error("Auth Fehler:", err);
+        try {
+            const Pi = window.Pi;
+            Pi.init({ version: "1.5", sandbox: false });
+            statusEl.innerText = "Status: SDK geladen! (Vercel)";
+            
+            async function auth() {
+                try {
+                    await Pi.authenticate(['payments'], onIncompletePaymentFound);
+                    console.log("Auth erfolgreich");
+                } catch (err) {
+                    debugEl.innerText = "Auth Fehler: " + err.message;
+                }
             }
+
+            async function onIncompletePaymentFound(payment) {
+                statusEl.innerText = "Hängende Zahlung gefunden...";
+                await fetch('/api/approve-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
+                });
+            }
+
+            function pay() {
+                statusEl.innerText = "Zahlung wird gestartet...";
+                
+                const paymentData = {
+                    amount: 0.1,
+                    memo: "Vercel Testzahlung",
+                    metadata: { type: "vercel_test" }
+                };
+
+                const callbacks = {
+                    onReadyForServerApproval: (paymentId) => {
+                        statusEl.innerText = "Warte auf Server-Genehmigung...";
+                        fetch('/api/approve-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId: paymentId, action: 'approve' })
+                        });
+                    },
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        statusEl.innerText = "Zahlung wird finalisiert...";
+                        fetch('/api/approve-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ paymentId: paymentId, action: 'complete', txid: txid })
+                        });
+                        alert("Zahlung erfolgreich!\nTXID: " + txid);
+                        statusEl.innerText = "Ticket erfolgreich gekauft!";
+                    },
+                    onCancel: (paymentId) => { 
+                        statusEl.innerText = "Zahlung abgebrochen."; 
+                    },
+                    onError: (error, payment) => { 
+                        debugEl.innerText = "Fehler: " + error.message; 
+                    }
+                };
+
+                Pi.createPayment(paymentData, callbacks);
+            }
+
+            auth();
+
+        } catch (e) {
+            debugEl.innerText = "Kritischer Fehler: " + e.message;
         }
-
-        async function onIncompletePaymentFound(payment) {
-            console.log("Hängende Zahlung gefunden...");
-            await fetch('/api/approve-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
-            });
-        }
-
-        function pay() {
-            const paymentData = {
-                amount: 0.1,
-                memo: "Vercel Testzahlung",
-                metadata: { type: "vercel_test" }
-            };
-
-            const callbacks = {
-                onReadyForServerApproval: (paymentId) => {
-                    document.getElementById('status-text').innerText = "Warte auf Genehmigung...";
-                    fetch('/api/approve-payment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: paymentId, action: 'approve' })
-                    });
-                },
-                onReadyForServerCompletion: (paymentId, txid) => {
-                    document.getElementById('status-text').innerText = "Zahlung wird finalisiert...";
-                    fetch('/api/approve-payment', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: paymentId, action: 'complete', txid: txid })
-                    });
-                    alert("Zahlung erfolgreich!\nTXID: " + txid);
-                },
-                onCancel: (paymentId) => { document.getElementById('status-text').innerText = "Abgebrochen."; },
-                onError: (error, payment) => { alert("Fehler: " + error.message); }
-            };
-
-            Pi.createPayment(paymentData, callbacks);
-        }
-
-        auth();
     </script>
 </body>
 </html>
