@@ -30,7 +30,6 @@
         const statusEl = document.getElementById('status-text');
         const debugEl = document.getElementById('debug-text');
 
-        // Funktion zum Starten der App
         async function startApp() {
             try {
                 if (!window.Pi) {
@@ -38,27 +37,22 @@
                     return;
                 }
 
-                // 1. SDK Initialisieren
-                await window.Pi.init({ version: "1.5", sandbox: false });
+                // FIX: Version auf "5" geändert
+                await window.Pi.init({ version: "5", sandbox: false });
                 statusEl.innerText = "Status: SDK geladen! (Vercel)";
-                console.log("Pi SDK Initialisiert");
-
-                // 2. Authentifizierung erst NACH Init
+                
                 try {
-                    const auth = await window.Pi.authenticate(['payments'], onIncompletePaymentFound);
-                    console.log("Auth erfolgreich", auth);
+                    await window.Pi.authenticate(['payments'], onIncompletePaymentFound);
                 } catch (authErr) {
-                    debugEl.innerText = "Login erforderlich im Pi Browser";
-                    console.error(authErr);
+                    debugEl.innerText = "Bitte im Pi Browser einloggen.";
                 }
 
             } catch (e) {
-                debugEl.innerText = "Init Fehler: " + e.message;
+                debugEl.innerText = "Fehler: " + e.message;
             }
         }
 
         async function onIncompletePaymentFound(payment) {
-            statusEl.innerText = "Hängende Zahlung wird gelöst...";
             await fetch('/api/approve-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -68,7 +62,6 @@
 
         function pay() {
             if (!window.Pi) return;
-            
             statusEl.innerText = "Zahlung wird gestartet...";
             
             const paymentData = {
@@ -97,13 +90,12 @@
                     statusEl.innerText = "Ticket gekauft!";
                 },
                 onCancel: (paymentId) => { statusEl.innerText = "Abgebrochen."; },
-                onError: (error, payment) => { debugEl.innerText = "Zahlungsfehler: " + error.message; }
+                onError: (error, payment) => { debugEl.innerText = "Fehler: " + error.message; }
             };
 
             window.Pi.createPayment(paymentData, callbacks);
         }
 
-        // Startet alles, sobald die Seite geladen ist
         window.onload = startApp;
     </script>
 </body>
