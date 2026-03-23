@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Marketplace Pi</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+    <script src="https://sdk.minepi.com/pi-sdk.js?v=2026"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; color: #1c1e21; }
         .container { background: white; padding: 40px; border-radius: 28px; box-shadow: 0 12px 40px rgba(0,0,0,0.1); max-width: 400px; margin: 40px auto; border: 1px solid #ddd; }
         h1 { color: #673ab7; font-size: 24px; margin-bottom: 20px; }
-        .btn-pay { width: 100%; padding: 18px; background: #673ab7; color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; font-size: 1.2em; transition: all 0.2s; box-shadow: 0 4px 12px rgba(103, 58, 183, 0.3); }
-        .btn-pay:active { transform: scale(0.96); }
+        .btn-pay { width: 100%; padding: 18px; background: #673ab7; color: white; border: none; border-radius: 16px; font-weight: bold; cursor: pointer; font-size: 1.2em; }
         #status-text { margin-top: 20px; font-size: 1.1em; font-weight: bold; color: #673ab7; }
         #debug-text { margin-top: 10px; font-size: 12px; color: #d32f2f; }
     </style>
@@ -18,11 +17,9 @@
 <body>
     <div class="container">
         <h1>🎟️ Ticket Marketplace</h1>
-        <p>Willkommen beim Test-Kauf!</p>
-        
+        <p>Version: 2.0 (Cache-Breaker)</p>
         <button class="btn-pay" onclick="pay()">Ticket kaufen (0.1 Pi)</button>
-        
-        <div id="status-text">Status: Initialisiere...</div>
+        <div id="status-text">Status: Warte auf SDK-Start...</div>
         <div id="debug-text"></div>
     </div>
 
@@ -32,23 +29,18 @@
 
         async function startApp() {
             try {
-                if (!window.Pi) {
-                    statusEl.innerText = "SDK nicht gefunden!";
+                if (typeof Pi === 'undefined') {
+                    statusEl.innerText = "SDK fehlt! Bitte Seite 3x neu laden.";
                     return;
                 }
-
-                // FIX: Version auf "5" geändert
-                await window.Pi.init({ version: "5", sandbox: false });
-                statusEl.innerText = "Status: SDK geladen! (Vercel)";
+                // Wir nutzen Version "1" - die stabilste für Vercel
+                await Pi.init({ version: "1" });
+                statusEl.innerText = "✅ SDK geladen! (Vercel)";
                 
-                try {
-                    await window.Pi.authenticate(['payments'], onIncompletePaymentFound);
-                } catch (authErr) {
-                    debugEl.innerText = "Bitte im Pi Browser einloggen.";
-                }
-
+                Pi.authenticate(['payments'], onIncompletePaymentFound)
+                  .catch((e) => { debugEl.innerText = "Auth: " + e.message; });
             } catch (e) {
-                debugEl.innerText = "Fehler: " + e.message;
+                debugEl.innerText = "Init-Fehler: " + e.message;
             }
         }
 
@@ -61,42 +53,30 @@
         }
 
         function pay() {
-            if (!window.Pi) return;
-            statusEl.innerText = "Zahlung wird gestartet...";
-            
-            const paymentData = {
-                amount: 0.1,
-                memo: "Vercel Testzahlung",
-                metadata: { type: "vercel_test" }
-            };
-
+            const paymentData = { amount: 0.1, memo: "Test", metadata: { type: "test" } };
             const callbacks = {
-                onReadyForServerApproval: (paymentId) => {
-                    statusEl.innerText = "Genehmigung läuft...";
+                onReadyForServerApproval: (id) => {
                     fetch('/api/approve-payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: paymentId, action: 'approve' })
+                        body: JSON.stringify({ paymentId: id, action: 'approve' })
                     });
                 },
-                onReadyForServerCompletion: (paymentId, txid) => {
-                    statusEl.innerText = "Zahlung wird abgeschlossen...";
+                onReadyForServerCompletion: (id, txid) => {
                     fetch('/api/approve-payment', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ paymentId: paymentId, action: 'complete', txid: txid })
+                        body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
                     });
-                    alert("Erfolg! TXID: " + txid);
-                    statusEl.innerText = "Ticket gekauft!";
+                    alert("Erfolg!");
                 },
-                onCancel: (paymentId) => { statusEl.innerText = "Abgebrochen."; },
-                onError: (error, payment) => { debugEl.innerText = "Fehler: " + error.message; }
+                onCancel: () => { statusEl.innerText = "Abgebrochen"; },
+                onError: (error) => { debugEl.innerText = "Fehler: " + error.message; }
             };
-
-            window.Pi.createPayment(paymentData, callbacks);
+            Pi.createPayment(paymentData, callbacks);
         }
 
-        window.onload = startApp;
+        setTimeout(startApp, 1500); 
     </script>
 </body>
 </html>
