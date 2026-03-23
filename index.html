@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pi Payment Fix</title>
+    <title>Pi Step 10 Fix</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f4f6; }
@@ -16,44 +16,54 @@
 <body>
     <div class="card">
         <h1>Pi Step 10 Fix</h1>
-        <div id="status">Bitte einloggen</div>
+        <div id="status">Bitte erst einloggen</div>
         <button class="btn-auth" onclick="login()">1. Login</button>
         <button class="btn-pay" onclick="createPayment()">2. Pay 0.1 Pi</button>
     </div>
 
     <script>
         const Pi = window.Pi;
+        // Sandbox muss auf true bleiben für den Checklisten-Test
         Pi.init({ version: "2.0", sandbox: true });
 
         async function login() {
             try {
-                const auth = await Pi.authenticate(['username', 'payments'], (p) => {});
-                document.getElementById('status').innerText = "Bereit: " + auth.user.username;
-            } catch (e) { alert("Login fehlgeschlagen"); }
+                const auth = await Pi.authenticate(['username', 'payments'], (p) => {
+                    console.log("Hängende Zahlung gefunden:", p);
+                });
+                document.getElementById('status').innerHTML = "<b style='color:green'>Eingeloggt als: " + auth.user.username + "</b>";
+            } catch (e) { alert("Login fehlgeschlagen. Bitte im Pi Browser öffnen!"); }
         }
 
         async function createPayment() {
             try {
                 await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Checklist Test",
+                    memo: "Checklist Step 10",
                     metadata: { id: "test-" + Date.now() }
                 }, {
                     onReadyForServerApproval: async (paymentId) => {
-                        // RUFT DEN SERVER AUF
-                        await fetch('/.netlify/functions/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId })
-                        });
+                        console.log("Zahlung erstellt, sende Approval an Server...");
+                        // RUFT DEINE NEUE NETLIFY-FUNKTION AUF
+                        try {
+                            const response = await fetch('/.netlify/functions/approve-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ paymentId })
+                            });
+                            const result = await response.json();
+                            console.log("Server Antwort:", result);
+                        } catch (err) {
+                            console.error("Server-Fehler:", err);
+                        }
                     },
                     onReadyForServerCompletion: (paymentId, txid) => {
-                        alert("ERFOLG! TXID: " + txid);
+                        alert("ERFOLG! Transaktion abgeschlossen.\nTXID: " + txid);
                     },
-                    onCancel: (id) => {},
+                    onCancel: (id) => console.log("Abgebrochen"),
                     onError: (err) => alert("Fehler: " + err.message)
                 });
-            } catch (e) { alert("Fehler beim Start"); }
+            } catch (e) { alert("Fehler beim Starten der Zahlung"); }
         }
     </script>
 </body>
