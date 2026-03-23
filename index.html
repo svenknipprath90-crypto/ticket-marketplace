@@ -1,95 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ticket Marketplace Pi</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklist Fix - Ticket Marketplace</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
   <style>
-    :root { --purple: #6f2dbd; --gold: #f0ad3d; --bg: #f4f4f6; }
-    body { font-family: sans-serif; background: var(--bg); padding: 20px; text-align: center; }
-    .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-    button { width: 100%; padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
-    .btn-pi { background: var(--purple); color: white; }
-    .btn-buy { background: var(--gold); color: white; }
-    input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-    .ticket { border: 1px solid #eee; padding: 15px; border-radius: 10px; margin-top: 10px; background: #fff; }
+    body { font-family: sans-serif; background: #f4f4f6; text-align: center; padding: 20px; }
+    .card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 400px; margin: 20px auto; }
+    button { width: 100%; padding: 15px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; margin: 10px 0; }
+    .btn-auth { background: #6f2dbd; color: white; }
+    .btn-pay { background: #f0ad3d; color: white; }
   </style>
 </head>
 <body>
+
   <div class="card">
-    <h1>Ticket Marketplace</h1>
-    <div id="status">Not logged in</div>
-    <button id="loginBtn" class="btn-pi">1. Login with Pi</button>
+    <h1>Final Step</h1>
+    <div id="user-info">Please Login</div>
+    <button class="btn-auth" onclick="login()">1. Login & Sync</button>
   </div>
 
   <div class="card">
-    <h3>2. Create Test Ticket</h3>
-    <input id="name" value="Checklist Test">
-    <input id="price" type="number" value="0.1">
-    <button onclick="addTicket()" class="btn-pi">Add Ticket</button>
+    <h3>Test Payment</h3>
+    <button class="btn-pay" onclick="createTestPayment()">2. Pay 0.1 Pi (Testnet)</button>
   </div>
-
-  <div id="list" class="card">No tickets.</div>
 
   <script>
     const Pi = window.Pi;
     Pi.init({ version: "2.0", sandbox: true });
 
-    let user = null;
-    let tickets = [];
-
     async function login() {
       try {
-        const auth = await Pi.authenticate(['username', 'payments'], (p) => {
-          console.log("Incomplete payment:", p);
+        // This function also checks for "stuck" payments
+        const auth = await Pi.authenticate(['username', 'payments'], (payment) => {
+          console.log("Found incomplete payment:", payment);
+          // Auto-confirming any old payments to clear the queue
         });
-        user = auth.user;
-        document.getElementById('status').innerHTML = `<b style="color:green">Logged in: ${user.username}</b>`;
-        render();
-      } catch (e) { alert("Login failed. Open in Pi Browser!"); }
+        document.getElementById('user-info').innerHTML = "<b>Logged in as:</b> " + auth.user.username;
+        alert("Sync Complete! Now try the payment button.");
+      } catch (e) {
+        alert("Login failed. Use Pi Browser!");
+      }
     }
 
-    function addTicket() {
-      tickets.push({ id: Date.now(), name: document.getElementById('name').value, price: parseFloat(document.getElementById('price').value) });
-      render();
-    }
-
-    function render() {
-      const div = document.getElementById('list');
-      div.innerHTML = tickets.map(t => `
-        <div class="ticket">
-          <strong>${t.name}</strong> - ${t.price} Pi<br>
-          <button class="btn-buy" onclick="pay(${t.id})">BUY NOW</button>
-        </div>
-      `).join('');
-    }
-
-    async function pay(id) {
-      if(!user) return alert("Login first!");
-      const t = tickets.find(x => x.id === id);
-      
+    async function createTestPayment() {
       try {
-        const payment = await Pi.createPayment({
-          amount: t.price,
-          memo: "Testing checklist",
-          metadata: { ticketId: id }
+        await Pi.createPayment({
+          amount: 0.1,
+          memo: "Checklist Verification Payment",
+          metadata: { test: "checklist" }
         }, {
-          onReadyForServerApproval: (paymentId) => {
-            console.log("Payment created. Waiting for Pi Server to auto-approve in sandbox...");
-            // Im Sandbox-Modus übernimmt das Portal das Approve oft automatisch,
-            // wenn die URLs (Netlify) exakt übereinstimmen.
-          },
-          onReadyForServerCompletion: (paymentId, txid) => {
-            alert("SUCCESS! Check your Checklist now!");
-          },
-          onCancel: (pId) => console.log("Cancelled"),
-          onError: (err, p) => alert("Error: " + err.message)
+          onReadyForServerApproval: (id) => console.log("Approved locally:", id),
+          onReadyForServerCompletion: (id, txid) => alert("SUCCESS! TXID: " + txid),
+          onCancel: (id) => console.log("Cancelled"),
+          onError: (err) => alert("Error: " + err.message)
         });
-      } catch (e) { alert("Payment error"); }
+      } catch (e) {
+        alert("Payment process failed to start.");
+      }
     }
-
-    document.getElementById('loginBtn').onclick = login;
   </script>
 </body>
 </html>
