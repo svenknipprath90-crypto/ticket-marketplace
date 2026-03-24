@@ -8,97 +8,155 @@
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
-        #user-info { font-weight: bold; margin-bottom: 20px; color: #673ab7; font-size: 1.2em; min-height: 1.5em; }
-        .btn { width: 100%; padding: 15px; background: #673ab7; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
-        #status { margin-top: 20px; font-size: 0.9em; color: #666; }
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #f4f7f6;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 350px;
+            margin: auto;
+        }
+
+        h1 {
+            color: #673ab7;
+        }
+
+        #user-info {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
+            background: #673ab7;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #status {
+            margin-top: 15px;
+            color: #666;
+        }
     </style>
 </head>
 
 <body>
-    <div class="card">
-        <h1>🎟️ Ticket Marketplace</h1>
 
-        <div id="user-info">Login...</div>
+<div class="card">
+    <h1>🎟️ Ticket Marketplace</h1>
 
-        <button class="btn" onclick="startPayment()">BUY TICKET (0.1 Pi)</button>
+    <div id="user-info">Not logged in</div>
 
-        <div id="status">Waiting for Pi...</div>
-    </div>
+    <button class="btn" onclick="login()">Login with Pi</button>
 
-    <script>
-        const statusEl = document.getElementById('status');
-        const userEl = document.getElementById('user-info');
+    <button class="btn" onclick="pay()" id="payBtn" disabled>
+        Buy Ticket (0.1 Pi)
+    </button>
 
-        async function initPi() {
-            try {
-                await Pi.init({ version: "1.5.0" });
+    <div id="status">Waiting...</div>
+</div>
 
-                const auth = await Pi.authenticate(['payments'], onIncompletePayment);
+<script>
+let isLoggedIn = false;
 
-                // 🔥 NUR DIESER FIX IST NEU
-                const username =
-                    auth.user.username ||
-                    auth.user.uid ||
-                    "Pi User";
+async function login() {
+    try {
+        await Pi.init({ version: "1.5.0" });
 
-                userEl.innerText = "Hello " + username;
-                statusEl.innerText = "Ready";
+        const auth = await Pi.authenticate(['payments'], onIncompletePayment);
 
-            } catch (err) {
-                userEl.innerText = "Open in Pi Browser";
-                statusEl.innerText = "Login required";
-            }
-        }
+        const username =
+            auth.user.username ||
+            auth.user.uid ||
+            "Pi User";
 
-        async function startPayment() {
-            statusEl.innerText = "Opening wallet...";
+        document.getElementById("user-info").innerText = "Hello " + username;
 
-            try {
-                await Pi.createPayment({
-                    amount: 0.1,
-                    memo: "Ticket Purchase",
-                    metadata: { orderId: Date.now() }
-                }, {
-                    onReadyForServerApproval: (id) => {
-                        return fetch('/.netlify/functions/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, action: 'approve' })
-                        });
-                    },
+        document.getElementById("status").innerText = "Logged in";
 
-                    onReadyForServerCompletion: (id, txid) => {
-                        statusEl.innerText = "Payment successful";
-                        return fetch('/.netlify/functions/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, action: 'complete', txid })
-                        });
-                    },
+        isLoggedIn = true;
+        document.getElementById("payBtn").disabled = false;
 
-                    onCancel: () => { statusEl.innerText = "Cancelled"; },
-                    onError: (e) => { statusEl.innerText = "Error: " + e.message; }
+    } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Login failed";
+    }
+}
+
+async function pay() {
+    if (!isLoggedIn) {
+        document.getElementById("status").innerText = "Please login first";
+        return;
+    }
+
+    try {
+        await Pi.createPayment({
+            amount: 0.1,
+            memo: "Ticket Purchase",
+            metadata: { orderId: Date.now() }
+        }, {
+            onReadyForServerApproval: (paymentId) => {
+                return fetch('/.netlify/functions/approve-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        paymentId,
+                        action: 'approve'
+                    })
                 });
+            },
 
-            } catch (err) {
-                statusEl.innerText = "Error: " + err.message;
+            onReadyForServerCompletion: (paymentId, txid) => {
+                document.getElementById("status").innerText = "Payment success";
+
+                return fetch('/.netlify/functions/approve-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        paymentId,
+                        action: 'complete',
+                        txid
+                    })
+                });
+            },
+
+            onCancel: () => {
+                document.getElementById("status").innerText = "Cancelled";
+            },
+
+            onError: (err) => {
+                document.getElementById("status").innerText = err.message;
             }
-        }
+        });
 
-        function onIncompletePayment(payment) {
-            return fetch('/.netlify/functions/approve-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    paymentId: payment.identifier,
-                    action: 'complete'
-                })
-            });
-        }
+    } catch (err) {
+        document.getElementById("status").innerText = err.message;
+    }
+}
 
-        initPi();
-    </script>
+function onIncompletePayment(payment) {
+    return fetch('/.netlify/functions/approve-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            paymentId: payment.identifier,
+            action: 'complete'
+        })
+    });
+}
+</script>
+
 </body>
 </html>
