@@ -22,29 +22,25 @@ let currentUser = null;
 
 async function start() {
   try {
-    // 🔥 Sicherstellen dass Pi geladen ist
     if (!window.Pi) {
       document.getElementById("user").innerText = "Open in Pi Browser";
       return;
     }
 
-    // 🔥 INIT (wichtig await!)
     await Pi.init({ version: "2.0" });
 
-    // 🔥 kleine Pause (sehr wichtig bei Pi)
+    // kleine Pause (wichtig für Pi)
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    // 🔥 AUTH mit handler
     const auth = await Pi.authenticate(['payments'], onIncompletePayment);
 
     currentUser = auth.user;
 
     document.getElementById("user").innerText =
-      "Hello " + (currentUser.username || currentUser.uid || "Pi User");
+      "Hello " + (currentUser.username || currentUser.uid);
 
     document.getElementById("status").innerText = "Ready";
 
-    // 🔥 Button freigeben
     document.getElementById("payBtn").disabled = false;
 
   } catch (e) {
@@ -63,13 +59,21 @@ async function pay() {
     await Pi.createPayment({
       amount: 0.1,
       memo: "Ticket purchase",
-      metadata: { type: "ticket" }
+
+      // 🔥 WICHTIG: unique metadata (fix für pending bug)
+      metadata: {
+        type: "ticket_" + Date.now()
+      }
+
     }, {
       onReadyForServerApproval: function(paymentId) {
         return fetch("/.netlify/functions/approve-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId, action: "approve" })
+          body: JSON.stringify({
+            paymentId: paymentId,
+            action: "approve"
+          })
         });
       },
 
@@ -79,7 +83,11 @@ async function pay() {
         return fetch("/.netlify/functions/approve-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId, txid, action: "complete" })
+          body: JSON.stringify({
+            paymentId: paymentId,
+            txid: txid,
+            action: "complete"
+          })
         });
       },
 
@@ -97,7 +105,7 @@ async function pay() {
   }
 }
 
-// 🔥 Pflicht für payments scope
+// Pflicht für Pi Payments
 function onIncompletePayment(payment) {
   return fetch("/.netlify/functions/approve-payment", {
     method: "POST",
@@ -109,7 +117,7 @@ function onIncompletePayment(payment) {
   });
 }
 
-// 🔥 Start
+// Start App
 start();
 </script>
 
