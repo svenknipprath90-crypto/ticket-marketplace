@@ -6,65 +6,46 @@
     <title>Ticket Marketplace</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
-        body { font-family: 'Arial', sans-serif; text-align: center; padding: 20px; background: #f0f2f5; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f0f2f5; color: #333; }
         .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
-        #user-info { font-weight: bold; margin-bottom: 20px; color: #333; font-size: 1.2em; min-height: 1.5em; }
-        .btn { width: 100%; padding: 15px; background: #673ab7; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        #status { margin-top: 20px; font-size: 0.9em; color: #666; }
+        .btn { width: 100%; padding: 15px; background: #673ab7; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1em; margin-top: 20px; }
+        #status { margin-top: 20px; font-weight: bold; color: #673ab7; }
+        #user-info { font-size: 1.1em; font-weight: bold; color: #333; margin-bottom: 15px; padding: 10px; background: #e1d5f2; border-radius: 10px; min-height: 20px; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>🎟️ Ticket Shop</h1>
-        <div id="user-info">Lade Profil...</div>
-        
-        <button class="btn" onclick="startPayment()">JETZT BEZAHLEN (0.1 Pi)</button>
-        
+        <div id="user-info">Anmeldung läuft...</div>
         <div id="status">Warte auf Pi Network...</div>
+        <button class="btn" onclick="startPayment()">JETZT BEZAHLEN (0.1 Pi)</button>
     </div>
 
     <script>
         const statusEl = document.getElementById('status');
         const userEl = document.getElementById('user-info');
 
-        // 1. Initialisierung sofort beim Start (Version 1.5.0 ist Pflicht)
-        async function initPi() {
+        window.onload = async function() {
             try {
                 await Pi.init({ version: "1.5.0" });
-                console.log("Pi SDK initialisiert");
-                login(); // Wenn Init klappt, sofort Login
+                const auth = await Pi.authenticate(['payments'], onIncompletePaymentFound);
+                userEl.innerText = "Willkommen, " + auth.user.username;
+                statusEl.innerText = "Bereit für Schritt 10";
             } catch (err) {
-                console.error("Init Fehler:", err);
                 statusEl.innerText = "Fehler: " + err.message;
-                // Selbst wenn Init meckert, versuchen wir den Login trotzdem!
-                login();
             }
-        }
+        };
 
-        // 2. Der Login-Prozess (für den Usernamen)
-        async function login() {
-            try {
-                const scopes = ['payments'];
-                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                userEl.innerText = "Hallo, " + auth.user.username;
-                statusEl.innerText = "Bereit für die Zahlung";
-            } catch (err) {
-                console.error("Login Fehler:", err);
-                userEl.innerText = "Bitte im Pi Browser öffnen";
-            }
-        }
-
-        // 3. Die Zahlung
         async function startPayment() {
-            statusEl.innerText = "Zahlung wird vorbereitet...";
+            statusEl.innerText = "Wallet wird geöffnet...";
             try {
                 const payment = await Pi.createPayment({
                     amount: 0.1,
-                    memo: "Ticket Kauf",
-                    metadata: { type: "ticket_purchase" }
+                    memo: "Testzahlung Ticket Shop",
+                    metadata: { type: "test_step_10" }
                 }, {
                     onReadyForServerApproval: (id) => {
-                        return fetch('/api/approve-payment', {
+                        return fetch('/.netlify/functions/approve-payment', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ paymentId: id, action: 'approve' })
@@ -72,9 +53,9 @@
                     },
                     onReadyForServerCompletion: (id, txid) => {
                         statusEl.innerText = "✅ Zahlung erfolgreich!";
-                        return fetch('/api/approve-payment', {
+                        return fetch('/.netlify/functions/approve-payment', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'variations/json' },
                             body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
                         });
                     },
@@ -87,15 +68,12 @@
         }
 
         function onIncompletePaymentFound(payment) {
-            return fetch('/api/approve-payment', {
+            return fetch('/.netlify/functions/approve-payment', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
             });
         }
-
-        // Script starten
-        initPi();
     </script>
 </body>
 </html>
