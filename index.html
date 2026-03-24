@@ -9,94 +9,108 @@
 
   <h1>🎟️ Ticket Marketplace</h1>
 
-  <h2 id="user">Loading...</h2>
+  <h2 id="user">Connecting...</h2>
 
-  <button onclick="pay()" style="padding:15px 30px; font-size:18px;">
+  <button onclick="pay()" id="payBtn" disabled style="padding:15px 30px; font-size:18px;">
     Buy Ticket (0.1 Pi)
   </button>
 
   <p id="status"></p>
 
 <script>
-  let currentUser = null;
+let currentUser = null;
 
-  async function start() {
-    try {
-      if (!window.Pi) {
-        alert("❌ Not running inside Pi Browser");
-        return;
-      }
-
-      Pi.init({ version: "2.0" });
-
-      const scopes = ['payments'];
-
-      // 🔥 FIX IST HIER
-      const auth = await Pi.authenticate(scopes, onIncompletePayment);
-
-      currentUser = auth.user;
-
-      document.getElementById("user").innerText =
-        "Hello " + currentUser.username;
-
-    } catch (e) {
-      document.getElementById("user").innerText = "Login failed";
-      console.error("AUTH ERROR:", e);
-    }
-  }
-
-  async function pay() {
-    if (!currentUser) {
-      alert("Not logged in");
+async function start() {
+  try {
+    // 🔥 Sicherstellen dass Pi geladen ist
+    if (!window.Pi) {
+      document.getElementById("user").innerText = "Open in Pi Browser";
       return;
     }
 
-    try {
-      await Pi.createPayment({
-        amount: 0.1,
-        memo: "Ticket purchase",
-        metadata: { type: "ticket" }
-      }, {
-        onReadyForServerApproval: function(paymentId) {
-          fetch("/.netlify/functions/approve-payment", {
-            method: "POST",
-            body: JSON.stringify({ paymentId })
-          });
-        },
+    // 🔥 INIT (wichtig await!)
+    await Pi.init({ version: "2.0" });
 
-        onReadyForServerCompletion: function(paymentId, txid) {
-          fetch("/.netlify/functions/approve-payment", {
-            method: "POST",
-            body: JSON.stringify({ paymentId, txid, action: "complete" })
-          });
-        },
+    // 🔥 kleine Pause (sehr wichtig bei Pi)
+    await new Promise(resolve => setTimeout(resolve, 300));
 
-        onCancel: function() {
-          document.getElementById("status").innerText = "Payment cancelled";
-        },
+    // 🔥 AUTH mit handler
+    const auth = await Pi.authenticate(['payments'], onIncompletePayment);
 
-        onError: function(error) {
-          document.getElementById("status").innerText = "Error: " + error;
-        }
-      });
+    currentUser = auth.user;
 
-    } catch (err) {
-      console.error("PAYMENT ERROR:", err);
-    }
+    document.getElementById("user").innerText =
+      "Hello " + (currentUser.username || currentUser.uid || "Pi User");
+
+    document.getElementById("status").innerText = "Ready";
+
+    // 🔥 Button freigeben
+    document.getElementById("payBtn").disabled = false;
+
+  } catch (e) {
+    console.error("AUTH ERROR:", e);
+    document.getElementById("user").innerText = "Login failed";
+  }
+}
+
+async function pay() {
+  if (!currentUser) {
+    alert("Not logged in");
+    return;
   }
 
-  // 🔥 DAS HIER FEHLTE VORHER
-  function onIncompletePayment(payment) {
-    return fetch("/.netlify/functions/approve-payment", {
-      method: "POST",
-      body: JSON.stringify({
-        paymentId: payment.identifier,
-        action: "complete"
-      })
+  try {
+    await Pi.createPayment({
+      amount: 0.1,
+      memo: "Ticket purchase",
+      metadata: { type: "ticket" }
+    }, {
+      onReadyForServerApproval: function(paymentId) {
+        return fetch("/.netlify/functions/approve-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId, action: "approve" })
+        });
+      },
+
+      onReadyForServerCompletion: function(paymentId, txid) {
+        document.getElementById("status").innerText = "Payment success";
+
+        return fetch("/.netlify/functions/approve-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId, txid, action: "complete" })
+        });
+      },
+
+      onCancel: function() {
+        document.getElementById("status").innerText = "Cancelled";
+      },
+
+      onError: function(error) {
+        document.getElementById("status").innerText = "Error: " + error;
+      }
     });
-  }
 
-  start();
+  } catch (err) {
+    console.error("PAYMENT ERROR:", err);
+  }
+}
+
+// 🔥 Pflicht für payments scope
+function onIncompletePayment(payment) {
+  return fetch("/.netlify/functions/approve-payment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      paymentId: payment.identifier,
+      action: "complete"
+    })
+  });
+}
+
+// 🔥 Start
+start();
 </script>
 
 </body>
