@@ -79,8 +79,16 @@
 
         let currentUser = null;
 
+        // 🔥 FIXED INIT (MIT DELAY)
         async function initPi() {
             try {
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                if (typeof Pi === "undefined") {
+                    userEl.innerText = "Open in Pi Browser";
+                    return;
+                }
+
                 await Pi.init({ version: "1.5.0" });
 
                 const auth = await Pi.authenticate(['payments'], onIncompletePayment);
@@ -166,6 +174,7 @@
             });
         }
 
+        // 🚀 START
         initPi();
     </script>
 </body>
