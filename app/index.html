@@ -48,10 +48,6 @@
             font-size: 1.1em;
         }
 
-        .btn:hover {
-            background: #5a2ea6;
-        }
-
         #status {
             margin-top: 20px;
             font-size: 0.9em;
@@ -67,7 +63,7 @@
         <div id="user-info">Connecting to Pi...</div>
 
         <button class="btn" onclick="startPayment()">
-            Pay 0.1 Pi
+            Buy Ticket (0.1 Pi)
         </button>
 
         <div id="status">Waiting for Pi...</div>
@@ -79,7 +75,6 @@
 
         let currentUser = null;
 
-        // 🔥 FIXED INIT (MIT DELAY)
         async function initPi() {
             try {
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -93,14 +88,22 @@
 
                 const auth = await Pi.authenticate(['payments'], onIncompletePayment);
 
-                if (auth && auth.user && auth.user.username) {
+                if (auth && auth.user) {
                     currentUser = auth.user;
-                    userEl.innerText = "Hello " + auth.user.username;
+
+                    // 🔥 ROBUST USERNAME FIX
+                    const username =
+                        auth.user.username ||
+                        auth.user.uid ||
+                        auth.user.id ||
+                        "Pi User";
+
+                    userEl.innerText = "Hello " + username;
                 } else {
                     userEl.innerText = "User loaded";
                 }
 
-                statusEl.innerText = "Ready for payment";
+                statusEl.innerText = "Ready to pay";
 
             } catch (err) {
                 console.error(err);
@@ -174,7 +177,6 @@
             });
         }
 
-        // 🚀 START
         initPi();
     </script>
 </body>
