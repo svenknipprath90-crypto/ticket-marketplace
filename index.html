@@ -22,10 +22,18 @@
 
   async function start() {
     try {
+      // 🔥 DEBUG: check if Pi exists
+      if (!window.Pi) {
+        alert("❌ Not running inside Pi Browser");
+        document.getElementById("user").innerText = "Not in Pi Browser";
+        return;
+      }
+
+      // 🔥 INIT
       Pi.init({ version: "2.0" });
 
+      // 🔥 AUTH
       const scopes = ['payments'];
-
       const auth = await Pi.authenticate(scopes);
 
       currentUser = auth.user;
@@ -35,7 +43,7 @@
 
     } catch (e) {
       document.getElementById("user").innerText = "Login failed";
-      console.error(e);
+      console.error("AUTH ERROR:", e);
     }
   }
 
@@ -46,7 +54,7 @@
     }
 
     try {
-      const payment = await Pi.createPayment({
+      await Pi.createPayment({
         amount: 0.1,
         memo: "Ticket purchase",
         metadata: { type: "ticket" }
@@ -75,10 +83,11 @@
       });
 
     } catch (err) {
-      console.error(err);
+      console.error("PAYMENT ERROR:", err);
     }
   }
 
+  // 🔥 START APP
   start();
 </script>
 
