@@ -1,84 +1,170 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ticket Shop</title>
-    <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #f4f7f6; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 350px; margin: auto; }
-        #user-info { font-weight: bold; margin-bottom: 20px; color: #673ab7; font-size: 1.2em; min-height: 1.5em; }
-        .btn { width: 100%; padding: 15px; background: #673ab7; color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1em; }
-        #status { margin-top: 20px; font-size: 0.9em; color: #666; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ticket Marketplace</title>
+
+  <!-- Pi SDK -->
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7f6;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 400px;
+      margin: auto;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #673ab7;
+    }
+
+    #user-info {
+      margin-bottom: 20px;
+      font-weight: bold;
+      color: #673ab7;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      background: #673ab7;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1em;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 20px;
+      color: #666;
+    }
+  </style>
 </head>
+
 <body>
-    <div class="card">
-        <h1>🎟️ Ticket Shop</h1>
-        <div id="user-info">Login...</div>
-        <button class="btn" onclick="startPayment()">JETZT BEZAHLEN (0.1 Pi)</button>
-        <div id="status">Warte auf Pi Network...</div>
-    </div>
 
-    <script>
-        const statusEl = document.getElementById('status');
-        const userEl = document.getElementById('user-info');
+<div class="card">
+  <h1>🎟️ Ticket Marketplace</h1>
 
-        async function initPi() {
-            try {
-                // Version 1.5.0 ist der Standard für stabile Verbindungen
-                await Pi.init({ version: "1.5.0" });
-                const auth = await Pi.authenticate(['payments'], onIncompletePayment);
-                userEl.innerText = "Hallo, " + auth.user.username;
-                statusEl.innerText = "Bereit für Zahlung";
-            } catch (err) {
-                userEl.innerText = "Login erforderlich";
-                statusEl.innerText = "Bitte im Pi Browser öffnen";
-            }
+  <div id="user-info">Connecting...</div>
+
+  <button class="btn" onclick="startPayment()">
+    Buy Ticket (0.1 Pi)
+  </button>
+
+  <div id="status">Waiting for Pi...</div>
+</div>
+
+<script>
+  const statusEl = document.getElementById("status");
+  const userEl = document.getElementById("user-info");
+
+  // 🔐 INIT PI
+  async function initPi() {
+    try {
+      await Pi.init({ version: "2.0" });
+
+      const auth = await Pi.authenticate(["payments"], onIncompletePayment);
+
+      userEl.innerText = "Hello " + auth.user.username;
+      statusEl.innerText = "Ready to pay";
+    } catch (err) {
+      userEl.innerText = "Please open in Pi Browser";
+      statusEl.innerText = err.message;
+    }
+  }
+
+  // 💰 START PAYMENT
+  async function startPayment() {
+    statusEl.innerText = "Opening wallet...";
+
+    try {
+      await Pi.createPayment(
+        {
+          amount: 0.1,
+          memo: "Ticket Purchase",
+          metadata: {
+            orderId: "TICKET-" + Date.now()
+          }
+        },
+        {
+          // 🔥 APPROVE
+          onReadyForServerApproval: async (paymentId) => {
+            return fetch(
+              "https://ticket-marketplace.netlify.app/.netlify/functions/approve-payment",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  paymentId: paymentId,
+                  action: "approve"
+                })
+              }
+            );
+          },
+
+          // 🔥 COMPLETE
+          onReadyForServerCompletion: async (paymentId, txid) => {
+            return fetch(
+              "https://ticket-marketplace.netlify.app/.netlify/functions/approve-payment",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  paymentId: paymentId,
+                  action: "complete",
+                  txid: txid
+                })
+              }
+            );
+          },
+
+          // ❌ CANCEL
+          onCancel: () => {
+            statusEl.innerText = "Payment cancelled";
+          },
+
+          // ❌ ERROR
+          onError: (error) => {
+            statusEl.innerText = "Error: " + error.message;
+          }
         }
+      );
+    } catch (err) {
+      statusEl.innerText = "Error: " + err.message;
+    }
+  }
 
-        async function startPayment() {
-            statusEl.innerText = "Wallet wird geöffnet...";
-            try {
-                const payment = await Pi.createPayment({
-                    amount: 0.1,
-                    memo: "Ticket Kauf",
-                    metadata: { orderId: "TICKET-" + Date.now() }
-                }, {
-                    onReadyForServerApproval: (id) => {
-                        // WICHTIG: Pfad zu deiner Netlify Function
-                        return fetch('/.netlify/functions/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, action: 'approve' })
-                        });
-                    },
-                    onReadyForServerCompletion: (id, txid) => {
-                        statusEl.innerText = "✅ Zahlung erfolgreich!";
-                        return fetch('/.netlify/functions/approve-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ paymentId: id, action: 'complete', txid: txid })
-                        });
-                    },
-                    onCancel: () => { statusEl.innerText = "Abgebrochen"; },
-                    onError: (e) => { statusEl.innerText = "Fehler: " + e.message; }
-                });
-            } catch (err) {
-                statusEl.innerText = "Fehler: " + err.message;
-            }
-        }
+  // 🔁 INCOMPLETE HANDLER
+  function onIncompletePayment(payment) {
+    return fetch(
+      "https://ticket-marketplace.netlify.app/.netlify/functions/approve-payment",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentId: payment.identifier,
+          action: "complete"
+        })
+      }
+    );
+  }
 
-        function onIncompletePayment(payment) {
-            return fetch('/.netlify/functions/approve-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentId: payment.identifier, action: 'complete' })
-            });
-        }
+  // START
+  initPi();
+</script>
 
-        initPi();
-    </script>
 </body>
 </html>
