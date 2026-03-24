@@ -15,14 +15,10 @@ exports.handler = async (event) => {
         return { statusCode: 405, headers, body: "Method Not Allowed" };
     }
 
+    const { paymentId, action, txid } = JSON.parse(event.body);
+    const apiKey = process.env.PI_API_KEY;
+
     try {
-        const { paymentId, action, txid } = JSON.parse(event.body);
-        const apiKey = process.env.PI_API_KEY;
-
-        if (!apiKey) {
-            throw new Error("Missing PI_API_KEY");
-        }
-
         // 🔥 APPROVE
         if (action === "approve") {
             await axios.post(
@@ -40,28 +36,15 @@ exports.handler = async (event) => {
             };
         }
 
-        // 🔥 COMPLETE (mit Retry!)
+        // 🔥 COMPLETE (WICHTIG FIX)
         if (action === "complete") {
-            try {
-                await axios.post(
-                    `https://api.minepi.com/v2/payments/${paymentId}/complete`,
-                    { txid },
-                    {
-                        headers: { Authorization: `Key ${apiKey}` }
-                    }
-                );
-            } catch (err) {
-                console.log("Retry complete...");
-
-                // 🔁 Retry einmal
-                await axios.post(
-                    `https://api.minepi.com/v2/payments/${paymentId}/complete`,
-                    { txid },
-                    {
-                        headers: { Authorization: `Key ${apiKey}` }
-                    }
-                );
-            }
+            await axios.post(
+                `https://api.minepi.com/v2/payments/${paymentId}/complete`,
+                { txid: txid || null },
+                {
+                    headers: { Authorization: `Key ${apiKey}` }
+                }
+            );
 
             return {
                 statusCode: 200,
@@ -70,20 +53,14 @@ exports.handler = async (event) => {
             };
         }
 
-        return {
-            statusCode: 400,
-            headers,
-            body: JSON.stringify({ error: "Invalid action" })
-        };
-
     } catch (error) {
-        console.error("ERROR:", error.message);
+        console.error("PI ERROR:", error.response?.data || error.message);
 
         return {
             statusCode: 500,
             headers,
             body: JSON.stringify({
-                error: error.message
+                error: error.response?.data || error.message
             })
         };
     }
