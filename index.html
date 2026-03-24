@@ -22,19 +22,17 @@
 
   async function start() {
     try {
-      // 🔥 DEBUG: check if Pi exists
       if (!window.Pi) {
         alert("❌ Not running inside Pi Browser");
-        document.getElementById("user").innerText = "Not in Pi Browser";
         return;
       }
 
-      // 🔥 INIT
       Pi.init({ version: "2.0" });
 
-      // 🔥 AUTH
       const scopes = ['payments'];
-      const auth = await Pi.authenticate(scopes);
+
+      // 🔥 FIX IST HIER
+      const auth = await Pi.authenticate(scopes, onIncompletePayment);
 
       currentUser = auth.user;
 
@@ -67,9 +65,9 @@
         },
 
         onReadyForServerCompletion: function(paymentId, txid) {
-          fetch("/.netlify/functions/complete-payment", {
+          fetch("/.netlify/functions/approve-payment", {
             method: "POST",
-            body: JSON.stringify({ paymentId, txid })
+            body: JSON.stringify({ paymentId, txid, action: "complete" })
           });
         },
 
@@ -87,7 +85,17 @@
     }
   }
 
-  // 🔥 START APP
+  // 🔥 DAS HIER FEHLTE VORHER
+  function onIncompletePayment(payment) {
+    return fetch("/.netlify/functions/approve-payment", {
+      method: "POST",
+      body: JSON.stringify({
+        paymentId: payment.identifier,
+        action: "complete"
+      })
+    });
+  }
+
   start();
 </script>
 
