@@ -1,5 +1,13 @@
 {
+  "name": "ticket-marketplace",
+  "version": "1.0.0",
+  "description": "Pi Network Ticket Shop",
+  "main": "index.html",
   "dependencies": {
     "axios": "^1.6.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
   }
 }
