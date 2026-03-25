@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Ticket Marketplace</title>
+  <title>Pi Ticket Marketplace</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
   <style>
@@ -13,12 +13,23 @@
     }
 
     header {
-      padding: 20px;
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
       background: rgba(255,255,255,0.05);
       backdrop-filter: blur(10px);
+    }
+
+    header img {
+      width: 35px;
+      height: 35px;
+      border-radius: 8px;
+    }
+
+    header span {
+      font-size: 20px;
+      font-weight: bold;
     }
 
     .container {
@@ -28,27 +39,31 @@
     .top-buttons {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
+      margin-top: 10px;
     }
 
     button {
-      padding: 10px 15px;
+      padding: 12px;
       border-radius: 10px;
       border: none;
-      background: #3b82f6;
-      color: white;
       font-weight: bold;
       flex: 1;
     }
 
+    .login-btn {
+      background: #3b82f6;
+      color: white;
+    }
+
     .create-btn {
       background: #6366f1;
+      color: white;
     }
 
     select {
-      padding: 10px;
-      border-radius: 10px;
       margin-top: 15px;
+      padding: 12px;
+      border-radius: 10px;
       width: 100%;
     }
 
@@ -65,11 +80,6 @@
       overflow: hidden;
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-      transition: transform 0.2s;
-    }
-
-    .card:hover {
-      transform: scale(1.02);
     }
 
     .card img {
@@ -88,8 +98,8 @@
     }
 
     .small {
-      color: #94a3b8;
       font-size: 12px;
+      color: #94a3b8;
     }
 
     .price {
@@ -98,29 +108,33 @@
 
     .total {
       font-weight: bold;
-      margin-top: 3px;
     }
 
     .view-btn {
-      width: 100%;
       margin-top: 10px;
+      width: 100%;
       background: #22c55e;
+      color: white;
       border-radius: 10px;
+      padding: 10px;
     }
   </style>
 </head>
 
 <body>
 
-<header>🎟️ Ticket Marketplace</header>
+<header>
+  <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png?v=1">
+  <span>Pi Ticket Marketplace</span>
+</header>
 
 <div class="container">
 
-  <h3 id="user">Not logged in</h3>
+  <h2 id="user">Not logged in</h2>
 
   <div class="top-buttons">
-    <button onclick="login()">Login</button>
-    <button class="create-btn" onclick="goToCreate()">＋ Create</button>
+    <button class="login-btn" onclick="login()">Login</button>
+    <button class="create-btn" onclick="goToCreate()">+ Create</button>
   </div>
 
   <select onchange="filterCategory(this.value)">
