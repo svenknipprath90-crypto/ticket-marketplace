@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>My Tickets</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
   <style>
     body {
@@ -18,18 +17,12 @@
       gap: 10px;
       padding: 15px;
       background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
     }
 
     header img {
       width: 35px;
       height: 35px;
       border-radius: 8px;
-    }
-
-    header span {
-      font-size: 20px;
-      font-weight: bold;
     }
 
     .container {
@@ -68,9 +61,10 @@
       font-size: 12px;
     }
 
-    .total {
+    .balance {
+      margin-top: 10px;
+      font-size: 18px;
       font-weight: bold;
-      margin-top: 5px;
     }
 
     .back-btn {
@@ -94,6 +88,7 @@
 
 <div class="container">
   <h2 id="title"></h2>
+  <div id="balance" class="balance"></div>
   <div id="tickets" class="grid"></div>
 
   <button class="back-btn" onclick="back()">⬅ Back</button>
@@ -104,6 +99,16 @@ const feePercent = 0.05;
 
 function loadTickets() {
   return JSON.parse(localStorage.getItem("tickets")) || [];
+}
+
+function showBalance() {
+  const username = localStorage.getItem("username");
+  const balances = JSON.parse(localStorage.getItem("balances")) || {};
+
+  const balance = balances[username] || 0;
+
+  document.getElementById("balance").innerText =
+    "Balance: " + balance.toFixed(2) + " Pi";
 }
 
 function render() {
@@ -136,9 +141,8 @@ function render() {
         <div class="card-body">
           <div class="title">${ticket.title}</div>
           <div class="small">${ticket.category}</div>
-          <div class="small">👤 ${ticket.seller}</div>
           <div>${ticket.price.toFixed(2)} Pi</div>
-          <div class="total">${total.toFixed(2)} Pi</div>
+          <div>${total.toFixed(2)} Pi</div>
         </div>
       </div>
     `;
@@ -150,6 +154,7 @@ function back() {
 }
 
 render();
+showBalance();
 </script>
 
 </body>
