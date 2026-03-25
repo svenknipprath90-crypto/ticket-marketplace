@@ -39,8 +39,8 @@ function loadTickets() {
   const stored = JSON.parse(localStorage.getItem("tickets")) || [];
 
   const defaultTickets = [
-    { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match", category: "Sport", seller: "System", image: "" },
-    { title: "Concert Berlin", price: 0.20, desc: "Live concert", category: "Concert", seller: "System", image: "" }
+    { title: "Aachen vs Ingolstadt", price: 0.10, category: "Sport", seller: "System", image: "" },
+    { title: "Concert Berlin", price: 0.20, category: "Concert", seller: "System", image: "" }
   ];
 
   return [...defaultTickets, ...stored];
@@ -60,21 +60,26 @@ function renderTickets() {
     const fee = ticket.price * feePercent;
     const total = ticket.price + fee;
 
+    const image = ticket.image && ticket.image.trim() !== ""
+      ? ticket.image
+      : "https://via.placeholder.com/250x150?text=No+Image";
+
     container.innerHTML += `
       <div style="
         background:white;
-        width:250px;
+        width:260px;
         margin:10px;
         padding:10px;
-        border-radius:10px;
-        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+        border-radius:12px;
+        box-shadow:0 3px 8px rgba(0,0,0,0.1);
       ">
-        <img src="${ticket.image || 'https://via.placeholder.com/250'}" 
+        <img src="${image}" 
              style="width:100%; height:150px; object-fit:cover; border-radius:8px;">
         
         <h3>${ticket.title}</h3>
-        <p>${ticket.category || "General"}</p>
+        <p style="color:gray;">${ticket.category || "General"}</p>
         <p>👤 ${ticket.seller || "Unknown"}</p>
+
         <p>${ticket.price.toFixed(2)} Pi</p>
         <b>${total.toFixed(2)} Pi</b><br><br>
 
