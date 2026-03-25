@@ -22,13 +22,6 @@
 
     header img {
       width: 35px;
-      height: 35px;
-      border-radius: 8px;
-    }
-
-    header span {
-      font-size: 20px;
-      font-weight: bold;
     }
 
     .container {
@@ -45,8 +38,8 @@
       padding: 10px;
       border-radius: 10px;
       border: none;
-      font-weight: bold;
       flex: 1;
+      font-weight: bold;
     }
 
     .login-btn { background: #3b82f6; color: white; }
@@ -55,11 +48,12 @@
     .fav-btn { background: #ec4899; color: white; }
     .purchase-btn { background: #10b981; color: white; }
 
-    select {
+    select, input {
       margin-top: 10px;
       padding: 10px;
       border-radius: 10px;
       width: 100%;
+      border: none;
     }
 
     .grid {
@@ -88,8 +82,8 @@
     .title { font-weight: bold; }
 
     .small {
-      color: #94a3b8;
       font-size: 12px;
+      color: #94a3b8;
     }
 
     .fav {
@@ -128,10 +122,17 @@
     <button class="purchase-btn" onclick="goToPurchases()">Purchases</button>
   </div>
 
-  <select onchange="filterCategory(this.value)">
-    <option value="all">All</option>
+  <!-- 🔍 Suche -->
+  <input placeholder="Search tickets..." oninput="search(this.value)">
+
+  <!-- Filter -->
+  <select onchange="filterMain(this.value)">
+    <option value="all">All Categories</option>
     <option value="Sport">Sport</option>
-    <option value="Concert">Concert</option>
+    <option value="Music">Music</option>
+    <option value="Comedy">Comedy</option>
+    <option value="Theater">Theater</option>
+    <option value="Festival">Festival</option>
     <option value="Other">Other</option>
   </select>
 
@@ -141,6 +142,7 @@
 
 <script>
 let activeFilter = "all";
+let searchText = "";
 
 function getFavorites() {
   return JSON.parse(localStorage.getItem("favorites")) || [];
@@ -166,23 +168,31 @@ function isFav(index) {
 function loadTickets() {
   const stored = JSON.parse(localStorage.getItem("tickets")) || [];
 
-  const defaults = [
-    { title: "Aachen vs Ingolstadt", price: 0.1, category: "Sport", seller: "System", image: "" },
-    { title: "Concert Berlin", price: 0.2, category: "Concert", seller: "System", image: "" }
-  ];
-
-  return [...defaults, ...stored];
+  return stored;
 }
 
 function renderTickets() {
   let tickets = loadTickets();
 
+  // Filter
   if (activeFilter !== "all") {
     tickets = tickets.filter(t => t.category === activeFilter);
   }
 
+  // Suche
+  if (searchText) {
+    tickets = tickets.filter(t =>
+      t.title.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }
+
   const container = document.getElementById("marketplace");
   container.innerHTML = "";
+
+  if (tickets.length === 0) {
+    container.innerHTML = "<p>No tickets found</p>";
+    return;
+  }
 
   tickets.forEach((t, i) => {
     const image = t.image || "https://images.unsplash.com/photo-1508098682722-e99c643e7f5c";
@@ -192,7 +202,7 @@ function renderTickets() {
         <img src="${image}">
         <div class="card-body">
           <div class="title">${t.title}</div>
-          <div class="small">${t.category}</div>
+          <div class="small">${t.category} → ${t.subCategory || ""}</div>
           <div class="small">${t.price} Pi</div>
 
           <div class="fav" onclick="toggleFavorite(${i})">
@@ -204,6 +214,16 @@ function renderTickets() {
       </div>
     `;
   });
+}
+
+function search(value) {
+  searchText = value;
+  renderTickets();
+}
+
+function filterMain(cat) {
+  activeFilter = cat;
+  renderTickets();
 }
 
 function openTicket(i) {
@@ -226,11 +246,6 @@ function goToFav() {
 
 function goToPurchases() {
   window.location.href = "purchases.html";
-}
-
-function filterCategory(cat) {
-  activeFilter = cat;
-  renderTickets();
 }
 
 async function login() {
