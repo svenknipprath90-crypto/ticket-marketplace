@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Purchases</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: linear-gradient(180deg, #020617, #0f172a);
+      color: white;
+      margin: 0;
+      padding: 15px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+
+    .title { font-weight: bold; }
+    .small { font-size: 12px; color: #94a3b8; }
+
+    button {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #334155;
+      color: white;
+      border-radius: 10px;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📦 My Purchases</h1>
+
+<div id="list"></div>
+
+<button onclick="back()">⬅ Back</button>
+
+<script>
+function loadPurchases() {
+  return JSON.parse(localStorage.getItem("purchases")) || [];
+}
+
+function render() {
+  const username = localStorage.getItem("username");
+  const all = loadPurchases();
+
+  const mine = all.filter(p => p.buyer === username);
+
+  const container = document.getElementById("list");
+  container.innerHTML = "";
+
+  if (mine.length === 0) {
+    container.innerHTML = "<p>No purchases yet</p>";
+    return;
+  }
+
+  mine.forEach(t => {
+    container.innerHTML += `
+      <div class="card">
+        <div class="title">${t.title}</div>
+        <div class="small">${t.category}</div>
+        <div>${t.price} Pi</div>
+      </div>
+    `;
+  });
+}
+
+function back() {
+  window.location.href = "index.html";
+}
+
+render();
+</script>
+
+</body>
+</html>
