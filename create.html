@@ -25,11 +25,6 @@
       border-radius: 8px;
     }
 
-    header span {
-      font-size: 20px;
-      font-weight: bold;
-    }
-
     .container {
       padding: 15px;
     }
@@ -47,7 +42,13 @@
       margin-top: 10px;
       border-radius: 10px;
       border: none;
-      font-size: 14px;
+    }
+
+    label {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 10px;
+      display: block;
     }
 
     .create-btn {
@@ -58,7 +59,6 @@
       color: white;
       border: none;
       border-radius: 12px;
-      font-size: 16px;
       font-weight: bold;
     }
 
@@ -72,11 +72,10 @@
       border-radius: 10px;
     }
 
-    label {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-top: 10px;
-      display: block;
+    .error {
+      color: #f87171;
+      font-size: 12px;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -93,7 +92,8 @@
   <div class="card">
 
     <label>Title</label>
-    <input id="title" placeholder="e.g. Aachen vs Ingolstadt">
+    <input id="title">
+    <div id="titleError" class="error"></div>
 
     <label>Category</label>
     <select id="category">
@@ -104,9 +104,10 @@
 
     <label>Price (Pi)</label>
     <input id="price" type="number" step="0.01">
+    <div id="priceError" class="error"></div>
 
     <label>Image URL</label>
-    <input id="image" placeholder="https://...">
+    <input id="image">
 
     <button class="create-btn" onclick="createTicket()">Create Ticket</button>
 
@@ -117,18 +118,43 @@
 </div>
 
 <script>
+function validate(title, price) {
+  let valid = true;
+
+  document.getElementById("titleError").innerText = "";
+  document.getElementById("priceError").innerText = "";
+
+  // Titel prüfen
+  if (!title || title.length < 5) {
+    document.getElementById("titleError").innerText =
+      "Title must be at least 5 characters";
+    valid = false;
+  }
+
+  // Preis prüfen
+  if (!price || price <= 0) {
+    document.getElementById("priceError").innerText =
+      "Price must be greater than 0";
+    valid = false;
+  }
+
+  return valid;
+}
+
 function createTicket() {
-  const title = document.getElementById("title").value;
+  const title = document.getElementById("title").value.trim();
   const category = document.getElementById("category").value;
   const price = parseFloat(document.getElementById("price").value);
-  const image = document.getElementById("image").value;
+  const image = document.getElementById("image").value.trim();
 
-  const username = localStorage.getItem("username") || "Unknown";
+  const username = localStorage.getItem("username");
 
-  if (!title || !price) {
-    alert("Please fill all fields");
+  if (!username) {
+    alert("Please login first");
     return;
   }
+
+  if (!validate(title, price)) return;
 
   const tickets = JSON.parse(localStorage.getItem("tickets")) || [];
 
@@ -142,7 +168,7 @@ function createTicket() {
 
   localStorage.setItem("tickets", JSON.stringify(tickets));
 
-  alert("Ticket created!");
+  alert("Ticket created successfully!");
 
   window.location.href = "index.html";
 }
