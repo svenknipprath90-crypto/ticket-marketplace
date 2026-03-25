@@ -5,120 +5,123 @@
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 
-<body style="text-align:center; font-family:sans-serif; padding:40px;">
+<body style="font-family: Arial; text-align:center;">
 
   <h1>🎟️ Ticket Marketplace</h1>
 
-  <h2 id="user">Connecting...</h2>
+  <h2 id="user">Not logged in</h2>
 
-  <button onclick="pay()" id="payBtn" disabled style="padding:15px 30px; font-size:18px;">
-    Buy Ticket (0.1 Pi)
-  </button>
+  <button onclick="login()">Login with Pi</button>
+
+  <hr>
+
+  <!-- Marketplace -->
+  <div id="marketplace"></div>
 
   <p id="status"></p>
 
 <script>
 let currentUser = null;
 
-async function start() {
-  try {
-    if (!window.Pi) {
-      document.getElementById("user").innerText = "Open in Pi Browser";
-      return;
-    }
+// 🔹 Fake Tickets (später echte Daten)
+const tickets = [
+  { title: "Aachen vs Ingolstadt", price: 0.1 },
+  { title: "Concert Berlin", price: 0.2 }
+];
 
+// 🔹 Fee Settings
+const feePercent = 0.05;
+
+// 🔹 Marketplace rendern
+function renderTickets() {
+  const container = document.getElementById("marketplace");
+  container.innerHTML = "";
+
+  tickets.forEach((ticket, index) => {
+    const fee = ticket.price * feePercent;
+    const total = ticket.price + fee;
+
+    container.innerHTML += `
+      <div style="border:1px solid #ccc; padding:15px; margin:10px;">
+        <h3>${ticket.title}</h3>
+        <p>Price: ${ticket.price.toFixed(2)} Pi</p>
+        <p>Fee: ${fee.toFixed(2)} Pi</p>
+        <p><b>Total: ${total.toFixed(2)} Pi</b></p>
+        <button onclick="buy(${index})">Buy Ticket</button>
+      </div>
+    `;
+  });
+}
+
+// 🔹 Login
+async function login() {
+  try {
     await Pi.init({ version: "2.0" });
 
-    // kleine Pause (wichtig für Pi)
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    const auth = await Pi.authenticate(['payments'], onIncompletePayment);
-
+    const auth = await Pi.authenticate(['username', 'payments']);
     currentUser = auth.user;
 
     document.getElementById("user").innerText =
       "Hello " + (currentUser.username || currentUser.uid);
 
-    document.getElementById("status").innerText = "Ready";
-
-    document.getElementById("payBtn").disabled = false;
-
   } catch (e) {
-    console.error("AUTH ERROR:", e);
-    document.getElementById("user").innerText = "Login failed";
+    document.getElementById("status").innerText = "Login failed";
   }
 }
 
-async function pay() {
+// 🔹 Payment (DEIN CORE – nur Fee ergänzt)
+async function buy(index) {
   if (!currentUser) {
-    alert("Not logged in");
+    document.getElementById("status").innerText = "Login first";
     return;
   }
 
+  const ticket = tickets[index];
+  const fee = ticket.price * feePercent;
+  const total = ticket.price + fee;
+
   try {
-    await Pi.createPayment({
-      amount: 0.1,
-      memo: "Ticket purchase",
+    const paymentData = {
+      amount: total,
+      memo: ticket.title,
+      metadata: { type: "ticket" }
+    };
 
-      // 🔥 WICHTIG: unique metadata (fix für pending bug)
-      metadata: {
-        type: "ticket_" + Date.now()
-      }
-
-    }, {
-      onReadyForServerApproval: function(paymentId) {
-        return fetch("/.netlify/functions/approve-payment", {
+    const callbacks = {
+      onReadyForServerApproval: async (paymentId) => {
+        await fetch("/.netlify/functions/approve-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            paymentId: paymentId,
-            action: "approve"
-          })
+          body: JSON.stringify({ paymentId })
         });
       },
 
-      onReadyForServerCompletion: function(paymentId, txid) {
-        document.getElementById("status").innerText = "Payment success";
-
-        return fetch("/.netlify/functions/approve-payment", {
+      onReadyForServerCompletion: async (paymentId, txid) => {
+        await fetch("/.netlify/functions/complete-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            paymentId: paymentId,
-            txid: txid,
-            action: "complete"
-          })
+          body: JSON.stringify({ paymentId, txid })
         });
       },
 
-      onCancel: function() {
+      onCancel: () => {
         document.getElementById("status").innerText = "Cancelled";
       },
 
-      onError: function(error) {
+      onError: (error) => {
         document.getElementById("status").innerText = "Error: " + error;
       }
-    });
+    };
+
+    await Pi.createPayment(paymentData, callbacks);
 
   } catch (err) {
-    console.error("PAYMENT ERROR:", err);
+    document.getElementById("status").innerText = "Payment failed";
   }
 }
 
-// Pflicht für Pi Payments
-function onIncompletePayment(payment) {
-  return fetch("/.netlify/functions/approve-payment", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      paymentId: payment.identifier,
-      action: "complete"
-    })
-  });
-}
-
-// Start App
-start();
+// Start
+renderTickets();
 </script>
 
 </body>
