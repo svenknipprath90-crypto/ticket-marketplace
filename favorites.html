@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Favorites</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #020617;
+      color: white;
+      padding: 15px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      margin-top: 5px;
+      padding: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>❤️ Favorites</h1>
+
+<div id="list"></div>
+
+<button onclick="back()">⬅ Back</button>
+
+<script>
+function loadTickets() {
+  return JSON.parse(localStorage.getItem("tickets")) || [];
+}
+
+function getFavorites() {
+  return JSON.parse(localStorage.getItem("favorites")) || [];
+}
+
+function render() {
+  const tickets = loadTickets();
+  const favs = getFavorites();
+
+  const container = document.getElementById("list");
+  container.innerHTML = "";
+
+  favs.forEach(i => {
+    const t = tickets[i];
+
+    container.innerHTML += `
+      <div class="card">
+        <div><b>${t.title}</b></div>
+        <div>${t.category}</div>
+        <div>${t.price} Pi</div>
+      </div>
+    `;
+  });
+}
+
+function back() {
+  window.location.href = "index.html";
+}
+
+render();
+</script>
+
+</body>
+</html>
