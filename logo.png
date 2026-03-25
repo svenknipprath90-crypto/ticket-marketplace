@@ -1,14 +1,14 @@
 <header style="
   display:flex;
   align-items:center;
-  justify-content:center;
+  justify-content:flex-start;
   gap:10px;
   padding:15px;
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(10px);
 ">
 
-  <img src="logo.png" style="width:30px; height:30px; border-radius:6px;">
+  <img src="logo.png?v=1" style="width:35px; height:35px; border-radius:8px;">
 
   <span style="font-size:20px; font-weight:bold;">
     Pi Ticket Marketplace
