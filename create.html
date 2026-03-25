@@ -21,8 +21,6 @@
 
     header img {
       width: 35px;
-      height: 35px;
-      border-radius: 8px;
     }
 
     .container {
@@ -36,12 +34,17 @@
       margin-top: 20px;
     }
 
-    input, select {
+    input, select, textarea {
       width: 100%;
       padding: 12px;
       margin-top: 10px;
       border-radius: 10px;
       border: none;
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: none;
     }
 
     label {
@@ -104,6 +107,9 @@
     <label>Price (Pi)</label>
     <input id="price" type="number" step="0.01">
 
+    <label>Description (Seats, Block, Info)</label>
+    <textarea id="description" placeholder="e.g. Block A, Row 3, Seat 12"></textarea>
+
     <label>Image URL</label>
     <input id="image">
 
@@ -117,22 +123,11 @@
 
 <script>
 const categories = {
-  Sport: [
-    "Football",
-    "Basketball",
-    "Tennis",
-    "MMA / Boxing",
-    "American Football",
-    "Ice Hockey",
-    "Motorsport",
-    "Handball",
-    "Volleyball",
-    "Baseball"
-  ],
-  Music: ["Pop", "Rap", "EDM", "Rock", "Classical"],
-  Comedy: ["Stand-up", "Live Show"],
-  Theater: ["Drama", "Musical"],
-  Festival: ["Open Air", "Weekend Festival"],
+  Sport: ["Football","Basketball","Tennis","MMA","American Football","Ice Hockey","Motorsport","Handball","Volleyball","Baseball"],
+  Music: ["Pop","Rap","EDM","Rock"],
+  Comedy: ["Stand-up"],
+  Theater: ["Drama","Musical"],
+  Festival: ["Open Air"],
   Other: ["General"]
 };
 
@@ -149,15 +144,16 @@ function updateSubcategories() {
 
 function createTicket() {
   const title = document.getElementById("title").value;
-  const main = document.getElementById("mainCategory").value;
+  const category = document.getElementById("mainCategory").value;
   const sub = document.getElementById("subCategory").value;
   const price = parseFloat(document.getElementById("price").value);
+  const description = document.getElementById("description").value;
   const image = document.getElementById("image").value;
 
   const username = localStorage.getItem("username");
 
-  if (!title || !price || !username) {
-    alert("Fill all fields & login");
+  if (!title || !price || !description) {
+    alert("Please fill all fields");
     return;
   }
 
@@ -165,9 +161,10 @@ function createTicket() {
 
   tickets.push({
     title,
-    category: main,
+    category,
     subCategory: sub,
     price,
+    description,
     image,
     seller: username
   });
