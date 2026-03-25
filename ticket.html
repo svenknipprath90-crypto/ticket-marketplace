@@ -118,6 +118,7 @@ function loadTicket() {
 
 function render() {
   const ticket = loadTicket();
+
   const fee = ticket.price * feePercent;
   const total = ticket.price + fee;
 
@@ -155,13 +156,23 @@ async function buy() {
   try {
     await Pi.init({ version: "2.0" });
 
-    const payment = await Pi.createPayment({
-      amount: 0.1,
-      memo: "Ticket purchase",
-      metadata: { type: "ticket" }
+    const ticket = JSON.parse(localStorage.getItem("selectedTicket"));
+
+    const fee = ticket.price * feePercent;
+    const total = ticket.price + fee;
+
+    await Pi.createPayment({
+      amount: total,
+      memo: "Ticket purchase (fee included)",
+      metadata: {
+        type: "ticket",
+        seller: ticket.seller,
+        price: ticket.price,
+        fee: fee
+      }
     });
 
-    alert("Payment started!");
+    alert("Payment successful!");
 
   } catch (e) {
     alert("Payment failed");
