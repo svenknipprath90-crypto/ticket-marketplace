@@ -6,21 +6,36 @@
   <style>
     body {
       font-family: Arial;
-      background: #020617;
+      background: linear-gradient(180deg, #020617, #0f172a);
       color: white;
+      margin: 0;
       padding: 15px;
     }
 
     .card {
       background: rgba(255,255,255,0.05);
+      border-radius: 12px;
       padding: 10px;
-      border-radius: 10px;
       margin-top: 10px;
     }
 
+    .title {
+      font-weight: bold;
+    }
+
+    .small {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
     button {
-      margin-top: 5px;
-      padding: 5px;
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      background: #334155;
+      color: white;
     }
   </style>
 </head>
@@ -35,7 +50,14 @@
 
 <script>
 function loadTickets() {
-  return JSON.parse(localStorage.getItem("tickets")) || [];
+  const stored = JSON.parse(localStorage.getItem("tickets")) || [];
+
+  const defaults = [
+    { title: "Aachen vs Ingolstadt", price: 0.1, category: "Sport", seller: "System", image: "" },
+    { title: "Concert Berlin", price: 0.2, category: "Concert", seller: "System", image: "" }
+  ];
+
+  return [...defaults, ...stored];
 }
 
 function getFavorites() {
@@ -49,13 +71,20 @@ function render() {
   const container = document.getElementById("list");
   container.innerHTML = "";
 
+  if (favs.length === 0) {
+    container.innerHTML = "<p>No favorites yet</p>";
+    return;
+  }
+
   favs.forEach(i => {
     const t = tickets[i];
 
+    if (!t) return;
+
     container.innerHTML += `
       <div class="card">
-        <div><b>${t.title}</b></div>
-        <div>${t.category}</div>
+        <div class="title">${t.title}</div>
+        <div class="small">${t.category}</div>
         <div>${t.price} Pi</div>
       </div>
     `;
