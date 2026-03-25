@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ticket Details</title>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+</head>
+
+<body style="font-family: Arial; text-align:center;">
+
+  <h1>🎟️ Ticket Details</h1>
+
+  <h2 id="user">Not logged in</h2>
+
+  <button onclick="login()">Login with Pi</button>
+
+  <hr>
+
+  <div id="ticketBox"></div>
+
+  <p id="status"></p>
+
+<script>
+let currentUser = null;
+
+const feePercent = 0.05;
+
+// Load Ticket
+const ticket = JSON.parse(localStorage.getItem("selectedTicket"));
+
+// Render Detail
+function renderTicket() {
+  const fee = ticket.price * feePercent;
+  const total = ticket.price + fee;
+
+  document.getElementById("ticketBox").innerHTML = `
+    <h2>${ticket.title}</h2>
+    <p>${ticket.desc}</p>
+
+    <p>Price: ${ticket.price.toFixed(2)} Pi</p>
+    <p>Fee: ${fee.toFixed(2)} Pi</p>
+    <h3>Total: ${total.toFixed(2)} Pi</h3>
+
+    <button onclick="buy()">Buy Ticket</button>
+    <br><br>
+    <button onclick="goBack()">⬅ Back</button>
+  `;
+}
+
+// Back
+function goBack() {
+  window.location.href = "index.html";
+}
+
+// Login
+async function login() {
+  try {
+    await Pi.init({ version: "2.0" });
+
+    const auth = await Pi.authenticate(['username', 'payments']);
+    currentUser = auth.user;
+
+    document.getElementById("user").innerText =
+      "Hello " + (currentUser.username || currentUser.uid);
+
+  } catch (e) {
+    document.getElementById("status").innerText = "Login failed";
+  }
+}
+
+// Buy
+async function buy() {
+  if (!currentUser) {
+    document.getElementById("status").innerText = "Login first";
+    return;
+  }
+
+  const fee = ticket.price * feePercent;
+  const total = ticket.price + fee;
+
+  try {
+    const paymentData = {
+      amount: total,
+      memo: ticket.title,
+      metadata: { type: "ticket" }
+    };
+
+    const callbacks = {
+      onReadyForServerApproval: async (paymentId) => {
+        await fetch("/.netlify/functions/approve-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId })
+        });
+      },
+
+      onReadyForServerCompletion: async (paymentId, txid) => {
+        await fetch("/.netlify/functions/complete-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ paymentId, txid })
+        });
+      },
+
+      onCancel: () => {
+        document.getElementById("status").innerText = "Cancelled";
+      },
+
+      onError: (error) => {
+        document.getElementById("status").innerText = "Error: " + error;
+      }
+    };
+
+    await Pi.createPayment(paymentData, callbacks);
+
+  } catch (err) {
+    document.getElementById("status").innerText = "Payment failed";
+  }
+}
+
+renderTicket();
+</script>
+
+</body>
+</html>
