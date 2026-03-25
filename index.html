@@ -23,13 +23,13 @@
 <script>
 let currentUser = null;
 
-// 🔹 Fake Tickets (später echte Daten)
+// 🔹 Fake Tickets
 const tickets = [
-  { title: "Aachen vs Ingolstadt", price: 0.1 },
-  { title: "Concert Berlin", price: 0.2 }
+  { title: "Aachen vs Ingolstadt", price: 0.10 },
+  { title: "Concert Berlin", price: 0.20 }
 ];
 
-// 🔹 Fee Settings
+// 🔹 Fee (5%)
 const feePercent = 0.05;
 
 // 🔹 Marketplace rendern
@@ -69,7 +69,7 @@ async function login() {
   }
 }
 
-// 🔹 Payment (DEIN CORE – nur Fee ergänzt)
+// 🔹 Payment
 async function buy(index) {
   if (!currentUser) {
     document.getElementById("status").innerText = "Login first";
@@ -89,6 +89,8 @@ async function buy(index) {
 
     const callbacks = {
       onReadyForServerApproval: async (paymentId) => {
+        document.getElementById("status").innerText = "Approving...";
+
         await fetch("/.netlify/functions/approve-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -97,6 +99,8 @@ async function buy(index) {
       },
 
       onReadyForServerCompletion: async (paymentId, txid) => {
+        document.getElementById("status").innerText = "Completing...";
+
         await fetch("/.netlify/functions/complete-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -120,7 +124,7 @@ async function buy(index) {
   }
 }
 
-// Start
+// 🔹 Start
 renderTickets();
 </script>
 
