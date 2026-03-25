@@ -13,23 +13,33 @@
 
   <button onclick="login()">Login with Pi</button>
 
+  <br><br>
+
+  <button onclick="goToCreate()">➕ Create Ticket</button>
+
   <hr>
 
   <div id="marketplace"></div>
 
 <script>
 let currentUser = null;
-
-// Fake Tickets
-const tickets = [
-  { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match in Aachen" },
-  { title: "Concert Berlin", price: 0.20, desc: "Live concert in Berlin" }
-];
-
 const feePercent = 0.05;
 
-// Render Marketplace
+// Load Tickets (Fake + gespeicherte)
+function loadTickets() {
+  const stored = JSON.parse(localStorage.getItem("tickets")) || [];
+
+  const defaultTickets = [
+    { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match in Aachen" },
+    { title: "Concert Berlin", price: 0.20, desc: "Live concert in Berlin" }
+  ];
+
+  return [...defaultTickets, ...stored];
+}
+
+// Render
 function renderTickets() {
+  const tickets = loadTickets();
   const container = document.getElementById("marketplace");
   container.innerHTML = "";
 
@@ -48,18 +58,23 @@ function renderTickets() {
   });
 }
 
-// Open Detail Page
+// Detailseite öffnen
 function openTicket(index) {
+  const tickets = loadTickets();
   const ticket = tickets[index];
   localStorage.setItem("selectedTicket", JSON.stringify(ticket));
   window.location.href = "ticket.html";
+}
+
+// Create Page
+function goToCreate() {
+  window.location.href = "create.html";
 }
 
 // Login
 async function login() {
   try {
     await Pi.init({ version: "2.0" });
-
     const auth = await Pi.authenticate(['username', 'payments']);
     currentUser = auth.user;
 
