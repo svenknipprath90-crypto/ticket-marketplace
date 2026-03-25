@@ -15,24 +15,20 @@
 
   <hr>
 
-  <!-- Marketplace -->
   <div id="marketplace"></div>
-
-  <p id="status"></p>
 
 <script>
 let currentUser = null;
 
-// 🔹 Fake Tickets
+// Fake Tickets
 const tickets = [
-  { title: "Aachen vs Ingolstadt", price: 0.10 },
-  { title: "Concert Berlin", price: 0.20 }
+  { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match in Aachen" },
+  { title: "Concert Berlin", price: 0.20, desc: "Live concert in Berlin" }
 ];
 
-// 🔹 Fee (5%)
 const feePercent = 0.05;
 
-// 🔹 Marketplace rendern
+// Render Marketplace
 function renderTickets() {
   const container = document.getElementById("marketplace");
   container.innerHTML = "";
@@ -45,15 +41,21 @@ function renderTickets() {
       <div style="border:1px solid #ccc; padding:15px; margin:10px;">
         <h3>${ticket.title}</h3>
         <p>Price: ${ticket.price.toFixed(2)} Pi</p>
-        <p>Fee: ${fee.toFixed(2)} Pi</p>
         <p><b>Total: ${total.toFixed(2)} Pi</b></p>
-        <button onclick="buy(${index})">Buy Ticket</button>
+        <button onclick="openTicket(${index})">View Details</button>
       </div>
     `;
   });
 }
 
-// 🔹 Login
+// Open Detail Page
+function openTicket(index) {
+  const ticket = tickets[index];
+  localStorage.setItem("selectedTicket", JSON.stringify(ticket));
+  window.location.href = "ticket.html";
+}
+
+// Login
 async function login() {
   try {
     await Pi.init({ version: "2.0" });
@@ -65,66 +67,10 @@ async function login() {
       "Hello " + (currentUser.username || currentUser.uid);
 
   } catch (e) {
-    document.getElementById("status").innerText = "Login failed";
+    document.getElementById("user").innerText = "Login failed";
   }
 }
 
-// 🔹 Payment
-async function buy(index) {
-  if (!currentUser) {
-    document.getElementById("status").innerText = "Login first";
-    return;
-  }
-
-  const ticket = tickets[index];
-  const fee = ticket.price * feePercent;
-  const total = ticket.price + fee;
-
-  try {
-    const paymentData = {
-      amount: total,
-      memo: ticket.title,
-      metadata: { type: "ticket" }
-    };
-
-    const callbacks = {
-      onReadyForServerApproval: async (paymentId) => {
-        document.getElementById("status").innerText = "Approving...";
-
-        await fetch("/.netlify/functions/approve-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId })
-        });
-      },
-
-      onReadyForServerCompletion: async (paymentId, txid) => {
-        document.getElementById("status").innerText = "Completing...";
-
-        await fetch("/.netlify/functions/complete-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId, txid })
-        });
-      },
-
-      onCancel: () => {
-        document.getElementById("status").innerText = "Cancelled";
-      },
-
-      onError: (error) => {
-        document.getElementById("status").innerText = "Error: " + error;
-      }
-    };
-
-    await Pi.createPayment(paymentData, callbacks);
-
-  } catch (err) {
-    document.getElementById("status").innerText = "Payment failed";
-  }
-}
-
-// 🔹 Start
 renderTickets();
 </script>
 
