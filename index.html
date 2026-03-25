@@ -5,7 +5,7 @@
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 </head>
 
-<body style="font-family: Arial; text-align:center;">
+<body style="font-family: Arial; background:#f5f5f5; text-align:center;">
 
   <h1>🎟️ Ticket Marketplace</h1>
 
@@ -19,7 +19,6 @@
 
   <br><br>
 
-  <!-- 🔥 FILTER -->
   <select onchange="filterCategory(this.value)">
     <option value="all">All</option>
     <option value="Sport">Sport</option>
@@ -29,26 +28,24 @@
 
   <hr>
 
-  <div id="marketplace"></div>
+  <div id="marketplace" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
 
 <script>
 let currentUser = null;
 let activeFilter = "all";
 const feePercent = 0.05;
 
-// Load Tickets
 function loadTickets() {
   const stored = JSON.parse(localStorage.getItem("tickets")) || [];
 
   const defaultTickets = [
-    { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match", category: "Sport", seller: "System" },
-    { title: "Concert Berlin", price: 0.20, desc: "Live concert", category: "Concert", seller: "System" }
+    { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match", category: "Sport", seller: "System", image: "" },
+    { title: "Concert Berlin", price: 0.20, desc: "Live concert", category: "Concert", seller: "System", image: "" }
   ];
 
   return [...defaultTickets, ...stored];
 }
 
-// Render
 function renderTickets() {
   let tickets = loadTickets();
 
@@ -64,25 +61,34 @@ function renderTickets() {
     const total = ticket.price + fee;
 
     container.innerHTML += `
-      <div style="border:1px solid #ccc; padding:15px; margin:10px;">
+      <div style="
+        background:white;
+        width:250px;
+        margin:10px;
+        padding:10px;
+        border-radius:10px;
+        box-shadow:0 2px 5px rgba(0,0,0,0.1);
+      ">
+        <img src="${ticket.image || 'https://via.placeholder.com/250'}" 
+             style="width:100%; height:150px; object-fit:cover; border-radius:8px;">
+        
         <h3>${ticket.title}</h3>
-        <p>Category: ${ticket.category || "General"}</p>
-        <p>Seller: ${ticket.seller || "Unknown"}</p>
-        <p>Price: ${ticket.price.toFixed(2)} Pi</p>
-        <p><b>Total: ${total.toFixed(2)} Pi</b></p>
-        <button onclick="openTicket(${index})">View Details</button>
+        <p>${ticket.category || "General"}</p>
+        <p>👤 ${ticket.seller || "Unknown"}</p>
+        <p>${ticket.price.toFixed(2)} Pi</p>
+        <b>${total.toFixed(2)} Pi</b><br><br>
+
+        <button onclick="openTicket(${index})">View</button>
       </div>
     `;
   });
 }
 
-// Filter
 function filterCategory(cat) {
   activeFilter = cat;
   renderTickets();
 }
 
-// Detail
 function openTicket(index) {
   const tickets = loadTickets();
   const ticket = tickets[index];
@@ -90,12 +96,10 @@ function openTicket(index) {
   window.location.href = "ticket.html";
 }
 
-// Create Page
 function goToCreate() {
   window.location.href = "create.html";
 }
 
-// Login
 async function login() {
   try {
     await Pi.init({ version: "2.0" });
@@ -115,7 +119,6 @@ async function login() {
   }
 }
 
-// Init
 renderTickets();
 </script>
 
