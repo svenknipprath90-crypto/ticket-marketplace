@@ -107,9 +107,7 @@ function render() {
   const fee = ticket.price * feePercent;
   const total = ticket.price + fee;
 
-  const image = ticket.image && ticket.image.trim() !== ""
-    ? ticket.image
-    : "https://images.unsplash.com/photo-1508098682722-e99c643e7f5c";
+  const image = ticket.image || "https://images.unsplash.com/photo-1508098682722-e99c643e7f5c";
 
   document.getElementById("content").innerHTML = `
     <div class="card">
@@ -139,6 +137,7 @@ async function buy() {
     await Pi.init({ version: "2.0" });
 
     const ticket = JSON.parse(localStorage.getItem("selectedTicket"));
+    const username = localStorage.getItem("username");
 
     const fee = ticket.price * feePercent;
     const total = ticket.price + fee;
@@ -153,18 +152,23 @@ async function buy() {
       }
     });
 
-    // 🔥 Seller Balance speichern
+    // 💰 Seller Balance
     const balances = JSON.parse(localStorage.getItem("balances")) || {};
-
-    if (!balances[ticket.seller]) {
-      balances[ticket.seller] = 0;
-    }
-
-    balances[ticket.seller] += ticket.price;
-
+    balances[ticket.seller] = (balances[ticket.seller] || 0) + ticket.price;
     localStorage.setItem("balances", JSON.stringify(balances));
 
-    alert("Payment successful!");
+    // 📦 Purchased Tickets speichern
+    const purchases = JSON.parse(localStorage.getItem("purchases")) || [];
+
+    purchases.push({
+      ...ticket,
+      buyer: username,
+      date: new Date().toISOString()
+    });
+
+    localStorage.setItem("purchases", JSON.stringify(purchases));
+
+    alert("Purchase successful!");
 
   } catch (e) {
     alert("Payment failed");
