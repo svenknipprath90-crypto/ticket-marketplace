@@ -3,21 +3,106 @@
 <head>
   <title>Ticket Marketplace</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+      margin: 0;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      background: #020617;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      background: #3b82f6;
+      color: white;
+      font-weight: bold;
+      margin: 5px;
+    }
+
+    select {
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+    }
+
+    .card-body {
+      padding: 10px;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .small {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .price {
+      margin-top: 5px;
+    }
+
+    .total {
+      font-weight: bold;
+      margin-top: 3px;
+    }
+
+    .view-btn {
+      width: 100%;
+      margin-top: 8px;
+      background: #22c55e;
+    }
+  </style>
 </head>
 
-<body style="font-family: Arial; background:#f5f5f5; text-align:center;">
+<body>
 
-  <h1>🎟️ Ticket Marketplace</h1>
+<header>🎟️ Ticket Marketplace</header>
 
-  <h2 id="user">Not logged in</h2>
+<div class="container">
+
+  <h3 id="user">Not logged in</h3>
 
   <button onclick="login()">Login with Pi</button>
+  <button onclick="goToCreate()">➕ Create</button>
 
-  <br><br>
-
-  <button onclick="goToCreate()">➕ Create Ticket</button>
-
-  <br><br>
+  <br>
 
   <select onchange="filterCategory(this.value)">
     <option value="all">All</option>
@@ -26,9 +111,9 @@
     <option value="Other">Other</option>
   </select>
 
-  <hr>
+  <div id="marketplace" class="grid"></div>
 
-  <div id="marketplace" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+</div>
 
 <script>
 let currentUser = null;
@@ -62,28 +147,21 @@ function renderTickets() {
 
     const image = ticket.image && ticket.image.trim() !== ""
       ? ticket.image
-      : "https://via.placeholder.com/250x150?text=No+Image";
+      : "https://via.placeholder.com/300x150";
 
     container.innerHTML += `
-      <div style="
-        background:white;
-        width:260px;
-        margin:10px;
-        padding:10px;
-        border-radius:12px;
-        box-shadow:0 3px 8px rgba(0,0,0,0.1);
-      ">
-        <img src="${image}" 
-             style="width:100%; height:150px; object-fit:cover; border-radius:8px;">
-        
-        <h3>${ticket.title}</h3>
-        <p style="color:gray;">${ticket.category || "General"}</p>
-        <p>👤 ${ticket.seller || "Unknown"}</p>
+      <div class="card">
+        <img src="${image}">
+        <div class="card-body">
+          <div class="title">${ticket.title}</div>
+          <div class="small">${ticket.category}</div>
+          <div class="small">👤 ${ticket.seller}</div>
 
-        <p>${ticket.price.toFixed(2)} Pi</p>
-        <b>${total.toFixed(2)} Pi</b><br><br>
+          <div class="price">${ticket.price.toFixed(2)} Pi</div>
+          <div class="total">${total.toFixed(2)} Pi</div>
 
-        <button onclick="openTicket(${index})">View</button>
+          <button class="view-btn" onclick="openTicket(${index})">View</button>
+        </div>
       </div>
     `;
   });
@@ -108,15 +186,12 @@ function goToCreate() {
 async function login() {
   try {
     await Pi.init({ version: "2.0" });
-
     const auth = await Pi.authenticate(['username', 'payments']);
 
     currentUser = auth.user;
-
     const username = currentUser.username || currentUser.uid;
 
     document.getElementById("user").innerText = "Hello " + username;
-
     localStorage.setItem("username", username);
 
   } catch (e) {
