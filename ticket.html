@@ -3,121 +3,172 @@
 <head>
   <title>Ticket Details</title>
   <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: linear-gradient(180deg, #020617, #0f172a);
+      color: white;
+      margin: 0;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+    }
+
+    header img {
+      width: 35px;
+      height: 35px;
+      border-radius: 8px;
+    }
+
+    header span {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      margin-top: 20px;
+    }
+
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+    }
+
+    .content {
+      padding: 15px;
+    }
+
+    .title {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .small {
+      color: #94a3b8;
+      margin-top: 5px;
+    }
+
+    .price {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+
+    .total {
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .buy-btn {
+      margin-top: 15px;
+      width: 100%;
+      padding: 14px;
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .back-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      background: #334155;
+      color: white;
+      border: none;
+      border-radius: 10px;
+    }
+  </style>
 </head>
 
-<body style="font-family: Arial; text-align:center;">
+<body>
 
-  <h1>🎟️ Ticket Details</h1>
+<header>
+  <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png?v=1">
+  <span>Pi Ticket Marketplace</span>
+</header>
 
-  <h2 id="user">Not logged in</h2>
-
-  <button onclick="login()">Login with Pi</button>
-
-  <hr>
-
-  <div id="ticketBox"></div>
-
-  <p id="status"></p>
+<div class="container" id="content"></div>
 
 <script>
-let currentUser = null;
-
 const feePercent = 0.05;
 
-// Load Ticket
-const ticket = JSON.parse(localStorage.getItem("selectedTicket"));
+function loadTicket() {
+  return JSON.parse(localStorage.getItem("selectedTicket"));
+}
 
-// Render Detail
-function renderTicket() {
+function render() {
+  const ticket = loadTicket();
   const fee = ticket.price * feePercent;
   const total = ticket.price + fee;
 
-  document.getElementById("ticketBox").innerHTML = `
-    <h2>${ticket.title}</h2>
-    <p>${ticket.desc}</p>
+  const image = ticket.image && ticket.image.trim() !== ""
+    ? ticket.image
+    : "https://images.unsplash.com/photo-1508098682722-e99c643e7f5c";
 
-    <p>Price: ${ticket.price.toFixed(2)} Pi</p>
-    <p>Fee: ${fee.toFixed(2)} Pi</p>
-    <h3>Total: ${total.toFixed(2)} Pi</h3>
+  document.getElementById("content").innerHTML = `
+    <div class="card">
+      <img src="${image}">
 
-    <button onclick="buy()">Buy Ticket</button>
-    <br><br>
-    <button onclick="goBack()">⬅ Back</button>
+      <div class="content">
+        <div class="title">${ticket.title}</div>
+
+        <div class="small">${ticket.category}</div>
+        <div class="small">👤 ${ticket.seller}</div>
+
+        <div class="price">Price: ${ticket.price.toFixed(2)} Pi</div>
+        <div class="small">Fee: ${fee.toFixed(2)} Pi</div>
+
+        <div class="total">${total.toFixed(2)} Pi</div>
+
+        <button class="buy-btn" onclick="buy()">Buy Ticket</button>
+        <button class="back-btn" onclick="back()">⬅ Back</button>
+      </div>
+    </div>
   `;
 }
 
-// Back
-function goBack() {
+function back() {
   window.location.href = "index.html";
 }
 
-// Login
-async function login() {
+async function buy() {
   try {
     await Pi.init({ version: "2.0" });
 
-    const auth = await Pi.authenticate(['username', 'payments']);
-    currentUser = auth.user;
+    const payment = await Pi.createPayment({
+      amount: 0.1,
+      memo: "Ticket purchase",
+      metadata: { type: "ticket" }
+    });
 
-    document.getElementById("user").innerText =
-      "Hello " + (currentUser.username || currentUser.uid);
+    alert("Payment started!");
 
   } catch (e) {
-    document.getElementById("status").innerText = "Login failed";
+    alert("Payment failed");
   }
 }
 
-// Buy
-async function buy() {
-  if (!currentUser) {
-    document.getElementById("status").innerText = "Login first";
-    return;
-  }
-
-  const fee = ticket.price * feePercent;
-  const total = ticket.price + fee;
-
-  try {
-    const paymentData = {
-      amount: total,
-      memo: ticket.title,
-      metadata: { type: "ticket" }
-    };
-
-    const callbacks = {
-      onReadyForServerApproval: async (paymentId) => {
-        await fetch("/.netlify/functions/approve-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId })
-        });
-      },
-
-      onReadyForServerCompletion: async (paymentId, txid) => {
-        await fetch("/.netlify/functions/complete-payment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paymentId, txid })
-        });
-      },
-
-      onCancel: () => {
-        document.getElementById("status").innerText = "Cancelled";
-      },
-
-      onError: (error) => {
-        document.getElementById("status").innerText = "Error: " + error;
-      }
-    };
-
-    await Pi.createPayment(paymentData, callbacks);
-
-  } catch (err) {
-    document.getElementById("status").innerText = "Payment failed";
-  }
-}
-
-renderTicket();
+render();
 </script>
 
 </body>
