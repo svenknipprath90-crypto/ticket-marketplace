@@ -26,14 +26,19 @@
       border-radius: 8px;
     }
 
+    header span {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
     .container {
       padding: 15px;
     }
 
     .top-buttons {
       display: flex;
-      gap: 10px;
       flex-wrap: wrap;
+      gap: 10px;
     }
 
     button {
@@ -48,6 +53,7 @@
     .create-btn { background: #6366f1; color: white; }
     .my-btn { background: #f59e0b; color: white; }
     .fav-btn { background: #ec4899; color: white; }
+    .purchase-btn { background: #10b981; color: white; }
 
     select {
       margin-top: 10px;
@@ -119,6 +125,7 @@
     <button class="create-btn" onclick="goToCreate()">+ Create</button>
     <button class="my-btn" onclick="goToMy()">My Tickets</button>
     <button class="fav-btn" onclick="goToFav()">Favorites</button>
+    <button class="purchase-btn" onclick="goToPurchases()">Purchases</button>
   </div>
 
   <select onchange="filterCategory(this.value)">
@@ -140,16 +147,15 @@ function getFavorites() {
 }
 
 function toggleFavorite(index) {
-  const favs = getFavorites();
+  let favs = getFavorites();
 
   if (favs.includes(index)) {
-    const updated = favs.filter(i => i !== index);
-    localStorage.setItem("favorites", JSON.stringify(updated));
+    favs = favs.filter(i => i !== index);
   } else {
     favs.push(index);
-    localStorage.setItem("favorites", JSON.stringify(favs));
   }
 
+  localStorage.setItem("favorites", JSON.stringify(favs));
   renderTickets();
 }
 
@@ -216,6 +222,10 @@ function goToMy() {
 
 function goToFav() {
   window.location.href = "favorites.html";
+}
+
+function goToPurchases() {
+  window.location.href = "purchases.html";
 }
 
 function filterCategory(cat) {
