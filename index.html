@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: Arial;
-      background: #0f172a;
+      background: linear-gradient(180deg, #020617, #0f172a);
       color: white;
       margin: 0;
     }
@@ -15,29 +15,41 @@
     header {
       padding: 20px;
       text-align: center;
-      background: #020617;
       font-size: 22px;
       font-weight: bold;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
     }
 
     .container {
       padding: 15px;
     }
 
+    .top-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     button {
       padding: 10px 15px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: none;
       background: #3b82f6;
       color: white;
       font-weight: bold;
-      margin: 5px;
+      flex: 1;
+    }
+
+    .create-btn {
+      background: #6366f1;
     }
 
     select {
       padding: 10px;
-      border-radius: 8px;
-      margin-top: 10px;
+      border-radius: 10px;
+      margin-top: 15px;
+      width: 100%;
     }
 
     .grid {
@@ -48,10 +60,16 @@
     }
 
     .card {
-      background: #1e293b;
-      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
       overflow: hidden;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      transition: transform 0.2s;
+    }
+
+    .card:hover {
+      transform: scale(1.02);
     }
 
     .card img {
@@ -61,11 +79,11 @@
     }
 
     .card-body {
-      padding: 10px;
+      padding: 12px;
     }
 
     .title {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
     }
 
@@ -85,8 +103,9 @@
 
     .view-btn {
       width: 100%;
-      margin-top: 8px;
+      margin-top: 10px;
       background: #22c55e;
+      border-radius: 10px;
     }
   </style>
 </head>
@@ -99,10 +118,10 @@
 
   <h3 id="user">Not logged in</h3>
 
-  <button onclick="login()">Login with Pi</button>
-  <button onclick="goToCreate()">➕ Create</button>
-
-  <br>
+  <div class="top-buttons">
+    <button onclick="login()">Login</button>
+    <button class="create-btn" onclick="goToCreate()">＋ Create</button>
+  </div>
 
   <select onchange="filterCategory(this.value)">
     <option value="all">All</option>
@@ -147,7 +166,7 @@ function renderTickets() {
 
     const image = ticket.image && ticket.image.trim() !== ""
       ? ticket.image
-      : "https://via.placeholder.com/300x150";
+      : "https://images.unsplash.com/photo-1508098682722-e99c643e7f5c";
 
     container.innerHTML += `
       <div class="card">
