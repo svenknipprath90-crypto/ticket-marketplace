@@ -71,12 +71,6 @@
       border: none;
       border-radius: 10px;
     }
-
-    .error {
-      color: #f87171;
-      font-size: 12px;
-      margin-top: 5px;
-    }
   </style>
 </head>
 
@@ -93,18 +87,22 @@
 
     <label>Title</label>
     <input id="title">
-    <div id="titleError" class="error"></div>
 
-    <label>Category</label>
-    <select id="category">
+    <label>Main Category</label>
+    <select id="mainCategory" onchange="updateSubcategories()">
       <option>Sport</option>
-      <option>Concert</option>
+      <option>Music</option>
+      <option>Comedy</option>
+      <option>Theater</option>
+      <option>Festival</option>
       <option>Other</option>
     </select>
 
+    <label>Sub Category</label>
+    <select id="subCategory"></select>
+
     <label>Price (Pi)</label>
     <input id="price" type="number" step="0.01">
-    <div id="priceError" class="error"></div>
 
     <label>Image URL</label>
     <input id="image">
@@ -118,49 +116,57 @@
 </div>
 
 <script>
-function validate(title, price) {
-  let valid = true;
+const categories = {
+  Sport: [
+    "Football",
+    "Basketball",
+    "Tennis",
+    "MMA / Boxing",
+    "American Football",
+    "Ice Hockey",
+    "Motorsport",
+    "Handball",
+    "Volleyball",
+    "Baseball"
+  ],
+  Music: ["Pop", "Rap", "EDM", "Rock", "Classical"],
+  Comedy: ["Stand-up", "Live Show"],
+  Theater: ["Drama", "Musical"],
+  Festival: ["Open Air", "Weekend Festival"],
+  Other: ["General"]
+};
 
-  document.getElementById("titleError").innerText = "";
-  document.getElementById("priceError").innerText = "";
+function updateSubcategories() {
+  const main = document.getElementById("mainCategory").value;
+  const sub = document.getElementById("subCategory");
 
-  // Titel prüfen
-  if (!title || title.length < 5) {
-    document.getElementById("titleError").innerText =
-      "Title must be at least 5 characters";
-    valid = false;
-  }
+  sub.innerHTML = "";
 
-  // Preis prüfen
-  if (!price || price <= 0) {
-    document.getElementById("priceError").innerText =
-      "Price must be greater than 0";
-    valid = false;
-  }
-
-  return valid;
+  categories[main].forEach(c => {
+    sub.innerHTML += `<option>${c}</option>`;
+  });
 }
 
 function createTicket() {
-  const title = document.getElementById("title").value.trim();
-  const category = document.getElementById("category").value;
+  const title = document.getElementById("title").value;
+  const main = document.getElementById("mainCategory").value;
+  const sub = document.getElementById("subCategory").value;
   const price = parseFloat(document.getElementById("price").value);
-  const image = document.getElementById("image").value.trim();
+  const image = document.getElementById("image").value;
 
   const username = localStorage.getItem("username");
 
-  if (!username) {
-    alert("Please login first");
+  if (!title || !price || !username) {
+    alert("Fill all fields & login");
     return;
   }
-
-  if (!validate(title, price)) return;
 
   const tickets = JSON.parse(localStorage.getItem("tickets")) || [];
 
   tickets.push({
     title,
-    category,
+    category: main,
+    subCategory: sub,
     price,
     image,
     seller: username
@@ -168,7 +174,7 @@ function createTicket() {
 
   localStorage.setItem("tickets", JSON.stringify(tickets));
 
-  alert("Ticket created successfully!");
+  alert("Ticket created!");
 
   window.location.href = "index.html";
 }
@@ -176,6 +182,8 @@ function createTicket() {
 function back() {
   window.location.href = "index.html";
 }
+
+updateSubcategories();
 </script>
 
 </body>
