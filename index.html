@@ -25,19 +25,19 @@
 let currentUser = null;
 const feePercent = 0.05;
 
-// Load Tickets (Fake + gespeicherte)
+// Load Tickets
 function loadTickets() {
   const stored = JSON.parse(localStorage.getItem("tickets")) || [];
 
   const defaultTickets = [
-    { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match in Aachen" },
-    { title: "Concert Berlin", price: 0.20, desc: "Live concert in Berlin" }
+    { title: "Aachen vs Ingolstadt", price: 0.10, desc: "Football match", category: "Sport", seller: "System" },
+    { title: "Concert Berlin", price: 0.20, desc: "Live concert", category: "Concert", seller: "System" }
   ];
 
   return [...defaultTickets, ...stored];
 }
 
-// Render
+// Render Tickets
 function renderTickets() {
   const tickets = loadTickets();
   const container = document.getElementById("marketplace");
@@ -50,6 +50,8 @@ function renderTickets() {
     container.innerHTML += `
       <div style="border:1px solid #ccc; padding:15px; margin:10px;">
         <h3>${ticket.title}</h3>
+        <p>Category: ${ticket.category || "General"}</p>
+        <p>Seller: ${ticket.seller || "Unknown"}</p>
         <p>Price: ${ticket.price.toFixed(2)} Pi</p>
         <p><b>Total: ${total.toFixed(2)} Pi</b></p>
         <button onclick="openTicket(${index})">View Details</button>
@@ -58,7 +60,7 @@ function renderTickets() {
   });
 }
 
-// Detailseite öffnen
+// Open Detail
 function openTicket(index) {
   const tickets = loadTickets();
   const ticket = tickets[index];
@@ -66,7 +68,7 @@ function openTicket(index) {
   window.location.href = "ticket.html";
 }
 
-// Create Page
+// Go to create page
 function goToCreate() {
   window.location.href = "create.html";
 }
@@ -75,17 +77,24 @@ function goToCreate() {
 async function login() {
   try {
     await Pi.init({ version: "2.0" });
+
     const auth = await Pi.authenticate(['username', 'payments']);
+
     currentUser = auth.user;
 
-    document.getElementById("user").innerText =
-      "Hello " + (currentUser.username || currentUser.uid);
+    const username = currentUser.username || currentUser.uid;
+
+    document.getElementById("user").innerText = "Hello " + username;
+
+    // 🔥 WICHTIG: speichern für Seller
+    localStorage.setItem("username", username);
 
   } catch (e) {
     document.getElementById("user").innerText = "Login failed";
   }
 }
 
+// Init
 renderTickets();
 </script>
 
