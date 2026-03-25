@@ -18,18 +18,12 @@
       gap: 10px;
       padding: 15px;
       background: rgba(255,255,255,0.05);
-      backdrop-filter: blur(10px);
     }
 
     header img {
       width: 35px;
       height: 35px;
       border-radius: 8px;
-    }
-
-    header span {
-      font-size: 20px;
-      font-weight: bold;
     }
 
     .container {
@@ -40,8 +34,6 @@
       background: rgba(255,255,255,0.05);
       border-radius: 16px;
       overflow: hidden;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
       margin-top: 20px;
     }
 
@@ -65,15 +57,10 @@
       margin-top: 5px;
     }
 
-    .price {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-
     .total {
       font-size: 22px;
       font-weight: bold;
-      margin-top: 5px;
+      margin-top: 10px;
     }
 
     .buy-btn {
@@ -84,8 +71,6 @@
       color: white;
       border: none;
       border-radius: 12px;
-      font-size: 16px;
-      font-weight: bold;
     }
 
     .back-btn {
@@ -129,16 +114,13 @@ function render() {
   document.getElementById("content").innerHTML = `
     <div class="card">
       <img src="${image}">
-
       <div class="content">
         <div class="title">${ticket.title}</div>
-
         <div class="small">${ticket.category}</div>
         <div class="small">👤 ${ticket.seller}</div>
 
-        <div class="price">Price: ${ticket.price.toFixed(2)} Pi</div>
+        <div>Price: ${ticket.price.toFixed(2)} Pi</div>
         <div class="small">Fee: ${fee.toFixed(2)} Pi</div>
-
         <div class="total">${total.toFixed(2)} Pi</div>
 
         <button class="buy-btn" onclick="buy()">Buy Ticket</button>
@@ -163,14 +145,24 @@ async function buy() {
 
     await Pi.createPayment({
       amount: total,
-      memo: "Ticket purchase (fee included)",
+      memo: "Ticket purchase",
       metadata: {
-        type: "ticket",
         seller: ticket.seller,
         price: ticket.price,
         fee: fee
       }
     });
+
+    // 🔥 Seller Balance speichern
+    const balances = JSON.parse(localStorage.getItem("balances")) || {};
+
+    if (!balances[ticket.seller]) {
+      balances[ticket.seller] = 0;
+    }
+
+    balances[ticket.seller] += ticket.price;
+
+    localStorage.setItem("balances", JSON.stringify(balances));
 
     alert("Payment successful!");
 
