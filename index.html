@@ -17,12 +17,23 @@
 
   <button onclick="goToCreate()">➕ Create Ticket</button>
 
+  <br><br>
+
+  <!-- 🔥 FILTER -->
+  <select onchange="filterCategory(this.value)">
+    <option value="all">All</option>
+    <option value="Sport">Sport</option>
+    <option value="Concert">Concert</option>
+    <option value="Other">Other</option>
+  </select>
+
   <hr>
 
   <div id="marketplace"></div>
 
 <script>
 let currentUser = null;
+let activeFilter = "all";
 const feePercent = 0.05;
 
 // Load Tickets
@@ -37,9 +48,14 @@ function loadTickets() {
   return [...defaultTickets, ...stored];
 }
 
-// Render Tickets
+// Render
 function renderTickets() {
-  const tickets = loadTickets();
+  let tickets = loadTickets();
+
+  if (activeFilter !== "all") {
+    tickets = tickets.filter(t => t.category === activeFilter);
+  }
+
   const container = document.getElementById("marketplace");
   container.innerHTML = "";
 
@@ -60,7 +76,13 @@ function renderTickets() {
   });
 }
 
-// Open Detail
+// Filter
+function filterCategory(cat) {
+  activeFilter = cat;
+  renderTickets();
+}
+
+// Detail
 function openTicket(index) {
   const tickets = loadTickets();
   const ticket = tickets[index];
@@ -68,7 +90,7 @@ function openTicket(index) {
   window.location.href = "ticket.html";
 }
 
-// Go to create page
+// Create Page
 function goToCreate() {
   window.location.href = "create.html";
 }
@@ -86,7 +108,6 @@ async function login() {
 
     document.getElementById("user").innerText = "Hello " + username;
 
-    // 🔥 WICHTIG: speichern für Seller
     localStorage.setItem("username", username);
 
   } catch (e) {
