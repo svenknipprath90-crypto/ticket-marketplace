@@ -18,6 +18,9 @@
     <option value="Other">Other</option>
   </select><br><br>
 
+  <!-- 🔥 NEU: Bild URL -->
+  <input id="image" placeholder="Image URL (optional)" /><br><br>
+
   <textarea id="desc" placeholder="Description"></textarea><br><br>
 
   <button onclick="createTicket()">Create</button>
@@ -30,6 +33,7 @@ function createTicket() {
   const price = parseFloat(document.getElementById("price").value);
   const desc = document.getElementById("desc").value;
   const category = document.getElementById("category").value;
+  const image = document.getElementById("image").value;
 
   const user = localStorage.getItem("username") || "Unknown";
 
@@ -43,7 +47,8 @@ function createTicket() {
     price,
     desc,
     category,
-    seller: user
+    seller: user,
+    image
   };
 
   let tickets = JSON.parse(localStorage.getItem("tickets")) || [];
