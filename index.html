@@ -40,6 +40,7 @@
       display: flex;
       gap: 10px;
       margin-top: 10px;
+      flex-wrap: wrap;
     }
 
     button {
@@ -57,6 +58,11 @@
 
     .create-btn {
       background: #6366f1;
+      color: white;
+    }
+
+    .my-btn {
+      background: #f59e0b;
       color: white;
     }
 
@@ -78,8 +84,6 @@
       background: rgba(255,255,255,0.05);
       border-radius: 16px;
       overflow: hidden;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     }
 
     .card img {
@@ -100,10 +104,6 @@
     .small {
       font-size: 12px;
       color: #94a3b8;
-    }
-
-    .price {
-      margin-top: 5px;
     }
 
     .total {
@@ -135,6 +135,7 @@
   <div class="top-buttons">
     <button class="login-btn" onclick="login()">Login</button>
     <button class="create-btn" onclick="goToCreate()">+ Create</button>
+    <button class="my-btn" onclick="goToMy()">My Tickets</button>
   </div>
 
   <select onchange="filterCategory(this.value)">
@@ -190,7 +191,7 @@ function renderTickets() {
           <div class="small">${ticket.category}</div>
           <div class="small">👤 ${ticket.seller}</div>
 
-          <div class="price">${ticket.price.toFixed(2)} Pi</div>
+          <div>${ticket.price.toFixed(2)} Pi</div>
           <div class="total">${total.toFixed(2)} Pi</div>
 
           <button class="view-btn" onclick="openTicket(${index})">View</button>
@@ -207,13 +208,16 @@ function filterCategory(cat) {
 
 function openTicket(index) {
   const tickets = loadTickets();
-  const ticket = tickets[index];
-  localStorage.setItem("selectedTicket", JSON.stringify(ticket));
+  localStorage.setItem("selectedTicket", JSON.stringify(tickets[index]));
   window.location.href = "ticket.html";
 }
 
 function goToCreate() {
   window.location.href = "create.html";
+}
+
+function goToMy() {
+  window.location.href = "my-tickets.html";
 }
 
 async function login() {
