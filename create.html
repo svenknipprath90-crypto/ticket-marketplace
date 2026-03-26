@@ -2,182 +2,65 @@
 <html>
 <head>
   <title>Create Ticket</title>
-
-  <style>
-    body {
-      font-family: Arial;
-      background: linear-gradient(180deg, #020617, #0f172a);
-      color: white;
-      margin: 0;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 15px;
-      background: rgba(255,255,255,0.05);
-    }
-
-    header img {
-      width: 35px;
-    }
-
-    .container {
-      padding: 15px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.05);
-      padding: 20px;
-      border-radius: 16px;
-      margin-top: 20px;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      margin-top: 10px;
-      border-radius: 10px;
-      border: none;
-    }
-
-    textarea {
-      min-height: 100px;
-    }
-
-    label {
-      font-size: 13px;
-      color: #94a3b8;
-      margin-top: 10px;
-      display: block;
-    }
-
-    .preview {
-      margin-top: 10px;
-      width: 100%;
-      border-radius: 10px;
-    }
-
-    .create-btn {
-      margin-top: 15px;
-      width: 100%;
-      padding: 14px;
-      background: #6366f1;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-weight: bold;
-    }
-
-    .back-btn {
-      margin-top: 10px;
-      width: 100%;
-      padding: 10px;
-      background: #334155;
-      color: white;
-      border-radius: 10px;
-      border: none;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 
-<body>
+<body style="font-family: Arial; background:#0f172a; color:white; text-align:center;">
 
-<header>
-  <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png?v=1">
-  <span>Create Ticket</span>
-</header>
+<h2>Create Ticket</h2>
 
-<div class="container">
+<input id="title" placeholder="Title"><br><br>
+<input id="price" placeholder="Price"><br><br>
+<input id="mainCategory" placeholder="Category"><br><br>
+<input id="subCategory" placeholder="Subcategory"><br><br>
+<textarea id="description" placeholder="Description"></textarea><br><br>
 
-  <div class="card">
-
-    <label>Title</label>
-    <input id="title">
-
-    <label>Category</label>
-    <select id="category">
-      <option>Sport</option>
-      <option>Music</option>
-      <option>Comedy</option>
-      <option>Theater</option>
-      <option>Festival</option>
-      <option>Other</option>
-    </select>
-
-    <label>Price (Pi)</label>
-    <input id="price" type="number">
-
-    <label>Description</label>
-    <textarea id="description"></textarea>
-
-    <label>Upload Image</label>
-    <input type="file" accept="image/*" onchange="handleImage(event)">
-
-    <img id="preview" class="preview" style="display:none;">
-
-    <button class="create-btn" onclick="createTicket()">Create Ticket</button>
-
-  </div>
-
-  <button class="back-btn" onclick="back()">⬅ Back</button>
-
-</div>
+<button onclick="createTicket()">Create</button>
 
 <script>
-let imageData = "";
 
-function handleImage(event) {
-  const file = event.target.files[0];
+const supabase = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
 
-  if (!file) return;
+// Ticket erstellen
+async function createTicket() {
 
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    imageData = e.target.result;
-    document.getElementById("preview").src = imageData;
-    document.getElementById("preview").style.display = "block";
-  };
-
-  reader.readAsDataURL(file);
-}
-
-function createTicket() {
   const title = document.getElementById("title").value;
-  const category = document.getElementById("category").value;
   const price = parseFloat(document.getElementById("price").value);
+  const category = document.getElementById("mainCategory").value;
+  const subcategory = document.getElementById("subCategory").value;
   const description = document.getElementById("description").value;
 
-  const username = localStorage.getItem("username");
-
-  if (!title || !price || !description) {
-    alert("Please fill all fields");
+  if (!title || !price) {
+    alert("Fill all fields");
     return;
   }
 
-  const tickets = JSON.parse(localStorage.getItem("tickets")) || [];
+  const { error } = await supabase.from("tickets").insert([
+    {
+      title,
+      price,
+      category,
+      subcategory,
+      description,
+      image: "",
+      seller: "user"
+    }
+  ]);
 
-  tickets.push({
-    title,
-    category,
-    price,
-    description,
-    image: imageData,
-    seller: username
-  });
-
-  localStorage.setItem("tickets", JSON.stringify(tickets));
+  if (error) {
+    console.log(error);
+    alert("Error creating ticket");
+    return;
+  }
 
   alert("Ticket created!");
 
   window.location.href = "index.html";
 }
 
-function back() {
-  window.location.href = "index.html";
-}
 </script>
 
 </body>
