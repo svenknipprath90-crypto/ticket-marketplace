@@ -44,7 +44,6 @@
 
     textarea {
       min-height: 100px;
-      resize: none;
     }
 
     label {
@@ -52,6 +51,12 @@
       color: #94a3b8;
       margin-top: 10px;
       display: block;
+    }
+
+    .preview {
+      margin-top: 10px;
+      width: 100%;
+      border-radius: 10px;
     }
 
     .create-btn {
@@ -71,8 +76,8 @@
       padding: 10px;
       background: #334155;
       color: white;
-      border: none;
       border-radius: 10px;
+      border: none;
     }
   </style>
 </head>
@@ -91,8 +96,8 @@
     <label>Title</label>
     <input id="title">
 
-    <label>Main Category</label>
-    <select id="mainCategory" onchange="updateSubcategories()">
+    <label>Category</label>
+    <select id="category">
       <option>Sport</option>
       <option>Music</option>
       <option>Comedy</option>
@@ -101,17 +106,16 @@
       <option>Other</option>
     </select>
 
-    <label>Sub Category</label>
-    <select id="subCategory"></select>
-
     <label>Price (Pi)</label>
-    <input id="price" type="number" step="0.01">
+    <input id="price" type="number">
 
-    <label>Description (Seats, Block, Info)</label>
-    <textarea id="description" placeholder="e.g. Block A, Row 3, Seat 12"></textarea>
+    <label>Description</label>
+    <textarea id="description"></textarea>
 
-    <label>Image URL</label>
-    <input id="image">
+    <label>Upload Image</label>
+    <input type="file" accept="image/*" onchange="handleImage(event)">
+
+    <img id="preview" class="preview" style="display:none;">
 
     <button class="create-btn" onclick="createTicket()">Create Ticket</button>
 
@@ -122,33 +126,29 @@
 </div>
 
 <script>
-const categories = {
-  Sport: ["Football","Basketball","Tennis","MMA","American Football","Ice Hockey","Motorsport","Handball","Volleyball","Baseball"],
-  Music: ["Pop","Rap","EDM","Rock"],
-  Comedy: ["Stand-up"],
-  Theater: ["Drama","Musical"],
-  Festival: ["Open Air"],
-  Other: ["General"]
-};
+let imageData = "";
 
-function updateSubcategories() {
-  const main = document.getElementById("mainCategory").value;
-  const sub = document.getElementById("subCategory");
+function handleImage(event) {
+  const file = event.target.files[0];
 
-  sub.innerHTML = "";
+  if (!file) return;
 
-  categories[main].forEach(c => {
-    sub.innerHTML += `<option>${c}</option>`;
-  });
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    imageData = e.target.result;
+    document.getElementById("preview").src = imageData;
+    document.getElementById("preview").style.display = "block";
+  };
+
+  reader.readAsDataURL(file);
 }
 
 function createTicket() {
   const title = document.getElementById("title").value;
-  const category = document.getElementById("mainCategory").value;
-  const sub = document.getElementById("subCategory").value;
+  const category = document.getElementById("category").value;
   const price = parseFloat(document.getElementById("price").value);
   const description = document.getElementById("description").value;
-  const image = document.getElementById("image").value;
 
   const username = localStorage.getItem("username");
 
@@ -162,10 +162,9 @@ function createTicket() {
   tickets.push({
     title,
     category,
-    subCategory: sub,
     price,
     description,
-    image,
+    image: imageData,
     seller: username
   });
 
@@ -179,8 +178,6 @@ function createTicket() {
 function back() {
   window.location.href = "index.html";
 }
-
-updateSubcategories();
 </script>
 
 </body>
