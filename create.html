@@ -19,12 +19,13 @@
 
 <script>
 
+// ✅ SUPABASE VERBINDUNG (FERTIG)
 const supabase = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// Ticket erstellen
+// ➕ Ticket erstellen
 async function createTicket() {
 
   const title = document.getElementById("title").value;
