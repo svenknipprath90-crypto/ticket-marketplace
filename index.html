@@ -2,264 +2,65 @@
 <html>
 <head>
   <title>Pi Ticket Marketplace</title>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
-  <style>
-    body {
-      font-family: Arial;
-      background: linear-gradient(180deg, #020617, #0f172a);
-      color: white;
-      margin: 0;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 15px;
-      background: rgba(255,255,255,0.05);
-    }
-
-    header img {
-      width: 35px;
-    }
-
-    .container {
-      padding: 15px;
-    }
-
-    .top-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    button {
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      flex: 1;
-      font-weight: bold;
-    }
-
-    .login-btn { background: #3b82f6; color: white; }
-    .create-btn { background: #6366f1; color: white; }
-    .my-btn { background: #f59e0b; color: white; }
-    .fav-btn { background: #ec4899; color: white; }
-    .purchase-btn { background: #10b981; color: white; }
-
-    select, input {
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      width: 100%;
-      border: none;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 15px;
-      margin-top: 20px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 16px;
-      overflow: hidden;
-    }
-
-    .card img {
-      width: 100%;
-      height: 120px;
-      object-fit: cover;
-    }
-
-    .card-body {
-      padding: 10px;
-    }
-
-    .title { font-weight: bold; }
-
-    .small {
-      font-size: 12px;
-      color: #94a3b8;
-    }
-
-    .fav {
-      margin-top: 5px;
-      cursor: pointer;
-      font-size: 18px;
-    }
-
-    .view-btn {
-      margin-top: 8px;
-      width: 100%;
-      background: #22c55e;
-      color: white;
-      padding: 8px;
-      border-radius: 10px;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 
-<body>
+<body style="font-family: Arial; background:#0f172a; color:white; text-align:center;">
 
-<header>
-  <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png?v=1">
-  <span>Pi Ticket Marketplace</span>
+<!-- HEADER -->
+<header style="display:flex; align-items:center; justify-content:center; gap:10px; padding:15px; background:rgba(255,255,255,0.05);">
+  <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" style="width:40px;">
+  <h2>Pi Ticket Marketplace</h2>
 </header>
 
-<div class="container">
+<h3>All Tickets</h3>
 
-  <h2 id="user">Not logged in</h2>
-
-  <div class="top-buttons">
-    <button class="login-btn" onclick="login()">Login</button>
-    <button class="create-btn" onclick="goToCreate()">+ Create</button>
-    <button class="my-btn" onclick="goToMy()">My Tickets</button>
-    <button class="fav-btn" onclick="goToFav()">Favorites</button>
-    <button class="purchase-btn" onclick="goToPurchases()">Purchases</button>
-  </div>
-
-  <!-- 🔍 Suche -->
-  <input placeholder="Search tickets..." oninput="search(this.value)">
-
-  <!-- Filter -->
-  <select onchange="filterMain(this.value)">
-    <option value="all">All Categories</option>
-    <option value="Sport">Sport</option>
-    <option value="Music">Music</option>
-    <option value="Comedy">Comedy</option>
-    <option value="Theater">Theater</option>
-    <option value="Festival">Festival</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <div id="marketplace" class="grid"></div>
-
-</div>
+<div id="marketplace"></div>
 
 <script>
-let activeFilter = "all";
-let searchText = "";
 
-function getFavorites() {
-  return JSON.parse(localStorage.getItem("favorites")) || [];
-}
+const supabase = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
 
-function toggleFavorite(index) {
-  let favs = getFavorites();
+// Tickets laden
+async function loadTickets() {
+  const { data, error } = await supabase
+    .from("tickets")
+    .select("*");
 
-  if (favs.includes(index)) {
-    favs = favs.filter(i => i !== index);
-  } else {
-    favs.push(index);
+  if (error) {
+    console.log(error);
+    return [];
   }
 
-  localStorage.setItem("favorites", JSON.stringify(favs));
-  renderTickets();
+  return data;
 }
 
-function isFav(index) {
-  return getFavorites().includes(index);
-}
-
-function loadTickets() {
-  const stored = JSON.parse(localStorage.getItem("tickets")) || [];
-
-  return stored;
-}
-
-function renderTickets() {
-  let tickets = loadTickets();
-
-  // Filter
-  if (activeFilter !== "all") {
-    tickets = tickets.filter(t => t.category === activeFilter);
-  }
-
-  // Suche
-  if (searchText) {
-    tickets = tickets.filter(t =>
-      t.title.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }
+// Anzeigen
+async function renderTickets() {
+  const tickets = await loadTickets();
 
   const container = document.getElementById("marketplace");
   container.innerHTML = "";
 
-  if (tickets.length === 0) {
-    container.innerHTML = "<p>No tickets found</p>";
-    return;
-  }
-
-  tickets.forEach((t, i) => {
-    const image = t.image || "https://images.unsplash.com/photo-1508098682722-e99c643e7f5c";
-
+  tickets.forEach((t) => {
     container.innerHTML += `
-      <div class="card">
-        <img src="${image}">
-        <div class="card-body">
-          <div class="title">${t.title}</div>
-          <div class="small">${t.category} → ${t.subCategory || ""}</div>
-          <div class="small">${t.price} Pi</div>
-
-          <div class="fav" onclick="toggleFavorite(${i})">
-            ${isFav(i) ? "❤️" : "🤍"}
-          </div>
-
-          <button class="view-btn" onclick="openTicket(${i})">View</button>
-        </div>
+      <div style="background:#1e293b; margin:15px; padding:15px; border-radius:12px;">
+        <h3>${t.title}</h3>
+        <p>${t.category} → ${t.subcategory}</p>
+        <p><b>${t.price} Pi</b></p>
+        <p>${t.description}</p>
       </div>
     `;
   });
 }
 
-function search(value) {
-  searchText = value;
-  renderTickets();
-}
-
-function filterMain(cat) {
-  activeFilter = cat;
-  renderTickets();
-}
-
-function openTicket(i) {
-  const tickets = loadTickets();
-  localStorage.setItem("selectedTicket", JSON.stringify(tickets[i]));
-  window.location.href = "ticket.html";
-}
-
-function goToCreate() {
-  window.location.href = "create.html";
-}
-
-function goToMy() {
-  window.location.href = "my-tickets.html";
-}
-
-function goToFav() {
-  window.location.href = "favorites.html";
-}
-
-function goToPurchases() {
-  window.location.href = "purchases.html";
-}
-
-async function login() {
-  try {
-    await Pi.init({ version: "2.0" });
-    const auth = await Pi.authenticate(['username']);
-    document.getElementById("user").innerText = "Hello " + auth.user.username;
-    localStorage.setItem("username", auth.user.username);
-  } catch {
-    alert("Login failed");
-  }
-}
-
+// Start
 renderTickets();
+
 </script>
 
 </body>
