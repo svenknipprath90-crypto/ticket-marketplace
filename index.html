@@ -5,53 +5,75 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 
-<body style="margin:0; font-family: Arial; background:#0f172a; color:white;">
+<body style="background:#0f172a; color:white; font-family:Arial; padding:20px;">
 
-<header style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#111827;">
+<h2>Pi Ticket Marketplace</h2>
 
-  <div style="display:flex; align-items:center; gap:10px;">
-    <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" style="width:35px;">
-    <h2 style="margin:0;">Pi Ticket Marketplace</h2>
-  </div>
+<div id="tickets"></div>
 
-  <button onclick="window.location.href='create.html'" style="
-    background:#6366f1;
+<br><br>
+
+<a href="create.html">
+  <button style="
+    background:#22c55e;
     color:white;
     border:none;
-    padding:10px 15px;
-    border-radius:8px;
+    padding:12px;
+    width:100%;
+    border-radius:10px;
+    font-size:16px;
   ">
-    + Create
+    Create Ticket
   </button>
-
-</header>
-
-<div style="padding:15px;">
-  <h3>All Tickets</h3>
-  <div id="marketplace"></div>
-</div>
+</a>
 
 <script>
+
+// 🔥 SUPABASE CONNECT
 const supabase = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqV4xZMRoFk"
 );
 
-async function renderTickets() {
-  const { data } = await supabase.from("tickets").select("*");
-  const container = document.getElementById("marketplace");
+// 📦 LOAD TICKETS
+async function loadTickets() {
 
-  if (!data || data.length === 0) {
-    container.innerHTML = "No tickets yet";
+  const { data, error } = await supabase
+    .from("tickets")
+    .select("*")
+    .order("id", { ascending: false });
+
+  if (error) {
+    console.log(error);
     return;
   }
 
-  data.forEach(t => {
-    container.innerHTML += `<p>${t.title} - ${t.price} Pi</p>`;
+  const container = document.getElementById("tickets");
+  container.innerHTML = "";
+
+  data.forEach(ticket => {
+
+    const div = document.createElement("div");
+
+    div.style.background = "#1e293b";
+    div.style.padding = "15px";
+    div.style.marginBottom = "15px";
+    div.style.borderRadius = "10px";
+
+    div.innerHTML = `
+      <h3>${ticket.title}</h3>
+      <p>${ticket.category}</p>
+      <p>${ticket.description}</p>
+      <p><b>${ticket.price} Pi</b></p>
+      ${ticket.image_url ? `<img src="${ticket.image_url}" style="width:100%; border-radius:10px; margin-top:10px;">` : ""}
+    `;
+
+    container.appendChild(div);
   });
 }
 
-renderTickets();
+loadTickets();
+
 </script>
 
 </body>
