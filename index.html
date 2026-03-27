@@ -7,22 +7,14 @@
 
 <body style="margin:0; font-family: Arial; background:#0f172a; color:white;">
 
-<!-- HEADER -->
-<header style="
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px;
-  background:#111827;
-">
+<header style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#111827;">
 
   <div style="display:flex; align-items:center; gap:10px;">
     <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" style="width:35px;">
     <h2 style="margin:0;">Pi Ticket Marketplace</h2>
   </div>
 
-  <!-- 🔥 DAS IST DER BUTTON -->
-  <button onclick="goCreate()" style="
+  <button onclick="window.location.href='create.html'" style="
     background:#6366f1;
     color:white;
     border:none;
@@ -34,76 +26,32 @@
 
 </header>
 
-<!-- CONTENT -->
 <div style="padding:15px;">
   <h3>All Tickets</h3>
-
-  <div id="marketplace" style="
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:15px;
-  "></div>
+  <div id="marketplace"></div>
 </div>
 
 <script>
-
-// SUPABASE
 const supabase = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 );
 
-// NAVIGATION
-function goCreate() {
-  window.location.href = "create.html";
-}
-
-// LOAD DATA
-async function loadTickets() {
-  const { data } = await supabase
-    .from("tickets")
-    .select("*");
-
-  return data || [];
-}
-
-// RENDER
 async function renderTickets() {
-  const tickets = await loadTickets();
+  const { data } = await supabase.from("tickets").select("*");
   const container = document.getElementById("marketplace");
-  container.innerHTML = "";
 
-  if (tickets.length === 0) {
-    container.innerHTML = "<p>No tickets yet</p>";
+  if (!data || data.length === 0) {
+    container.innerHTML = "No tickets yet";
     return;
   }
 
-  tickets.forEach((t) => {
-    container.innerHTML += `
-      <div style="background:#1f2937; border-radius:12px; overflow:hidden;">
-
-        ${t.image_url ? `
-          <img src="${t.image_url}" style="width:100%; height:120px; object-fit:cover;">
-        ` : `
-          <div style="height:120px; display:flex; align-items:center; justify-content:center;">
-            🎟️
-          </div>
-        `}
-
-        <div style="padding:10px;">
-          <h4>${t.title}</h4>
-          <p>${t.category}</p>
-          <p>${t.price} Pi</p>
-        </div>
-
-      </div>
-    `;
+  data.forEach(t => {
+    container.innerHTML += `<p>${t.title} - ${t.price} Pi</p>`;
   });
 }
 
-// START
 renderTickets();
-
 </script>
 
 </body>
