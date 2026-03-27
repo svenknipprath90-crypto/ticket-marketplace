@@ -7,39 +7,29 @@
 
 <body style="background:#0f172a; color:white; font-family:Arial; padding:20px;">
 
-<h2 style="margin-bottom:20px;">Create Ticket</h2>
+<h2>Create Ticket</h2>
 
-<input id="title" placeholder="Title" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"><br>
+<input id="title" placeholder="Title"><br><br>
+<input id="category" placeholder="Category"><br><br>
+<input id="price" placeholder="Price"><br><br>
+<textarea id="description" placeholder="Description"></textarea><br><br>
+<input type="file" id="image"><br><br>
 
-<input id="category" placeholder="Category" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"><br>
-
-<input id="price" placeholder="Price" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"><br>
-
-<textarea id="description" placeholder="Description" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"></textarea><br>
-
-<input type="file" id="image" style="margin-bottom:15px;"><br>
-
-<button onclick="createTicket()" style="
-  background:#22c55e;
-  color:white;
-  border:none;
-  padding:12px;
-  width:100%;
-  border-radius:10px;
-  font-size:16px;
-">
-  Create Ticket
-</button>
+<button id="createBtn">Create Ticket</button>
 
 <script>
 
-// 🔥 SUPABASE CONNECT (FIXED KEY)
 const supabase = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+// 🔥 BUTTON FIX
+document.getElementById("createBtn").addEventListener("click", createTicket);
+
 async function createTicket() {
+
+  alert("Button funktioniert"); // TEST
 
   const title = document.getElementById("title").value;
   const category = document.getElementById("category").value;
@@ -49,7 +39,6 @@ async function createTicket() {
 
   let imageUrl = "";
 
-  // 📸 IMAGE UPLOAD
   if (file) {
     const fileName = Date.now() + "_" + file.name;
 
@@ -58,7 +47,7 @@ async function createTicket() {
       .upload(fileName, file);
 
     if (uploadError) {
-      alert("Image upload failed");
+      alert("Upload Fehler");
       console.log(uploadError);
       return;
     }
@@ -70,24 +59,23 @@ async function createTicket() {
     imageUrl = data.publicUrl;
   }
 
-  // 💾 SAVE TO DATABASE
   const { error } = await supabase.from("tickets").insert([
     {
-      title: title,
-      category: category,
+      title,
+      category,
       price: Number(price),
-      description: description,
+      description,
       image_url: imageUrl
     }
   ]);
 
   if (error) {
-    alert("Error saving ticket!");
+    alert("DB Fehler");
     console.log(error);
     return;
   }
 
-  alert("Ticket created!");
+  alert("Ticket erstellt!");
   window.location.href = "index.html";
 }
 
