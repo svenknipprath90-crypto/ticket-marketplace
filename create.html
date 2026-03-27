@@ -7,21 +7,33 @@
 
 <body style="background:#0f172a; color:white; font-family:Arial; padding:20px;">
 
-<h2>Create Ticket</h2>
+<h2 style="margin-bottom:20px;">Create Ticket</h2>
 
-<input id="title" placeholder="Title"><br><br>
-<input id="category" placeholder="Category"><br><br>
-<input id="price" placeholder="Price"><br><br>
+<input id="title" placeholder="Title" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"><br>
 
-<textarea id="description" placeholder="Description"></textarea><br><br>
+<input id="category" placeholder="Category" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"><br>
 
-<input type="file" id="image"><br><br>
+<input id="price" placeholder="Price" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"><br>
 
-<button onclick="createTicket()">Create</button>
+<textarea id="description" placeholder="Description" style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none;"></textarea><br>
+
+<input type="file" id="image" style="margin-bottom:15px;"><br>
+
+<button onclick="createTicket()" style="
+  background:#22c55e;
+  color:white;
+  border:none;
+  padding:12px;
+  width:100%;
+  border-radius:10px;
+  font-size:16px;
+">
+  Create Ticket
+</button>
 
 <script>
 
-// 🔥 DEINE SUPABASE DATEN
+// 🔥 SUPABASE CONNECT
 const supabase = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
@@ -37,17 +49,17 @@ async function createTicket() {
 
   let imageUrl = "";
 
-  // 🔥 IMAGE UPLOAD
+  // 📸 IMAGE UPLOAD
   if (file) {
     const fileName = Date.now() + "_" + file.name;
 
-    const { error } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from("tickets")
       .upload(fileName, file);
 
-    if (error) {
-      alert("Upload failed!");
-      console.log(error);
+    if (uploadError) {
+      alert("Image upload failed");
+      console.log(uploadError);
       return;
     }
 
@@ -58,22 +70,20 @@ async function createTicket() {
     imageUrl = data.publicUrl;
   }
 
-  // 🔥 SAVE TICKET
-  const { error: dbError } = await supabase
-    .from("tickets")
-    .insert([
-      {
-        title: title,
-        category: category,
-        price: price,
-        description: description,
-        image_url: imageUrl
-      }
-    ]);
+  // 💾 SAVE TO DATABASE
+  const { error } = await supabase.from("tickets").insert([
+    {
+      title: title,
+      category: category,
+      price: Number(price),
+      description: description,
+      image_url: imageUrl
+    }
+  ]);
 
-  if (dbError) {
+  if (error) {
     alert("Error saving ticket!");
-    console.log(dbError);
+    console.log(error);
     return;
   }
 
