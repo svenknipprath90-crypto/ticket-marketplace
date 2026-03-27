@@ -2,8 +2,6 @@
 <html>
 <head>
   <title>Create Ticket</title>
-
-  <!-- ✅ RICHTIGER SUPABASE IMPORT -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 </head>
 
@@ -17,20 +15,29 @@
 <textarea id="description" placeholder="Description"></textarea><br><br>
 <input type="file" id="image"><br><br>
 
-<button id="createBtn">Create Ticket</button>
+<button id="createBtn" style="
+  background:#22c55e;
+  color:white;
+  border:none;
+  padding:12px;
+  width:100%;
+  border-radius:10px;
+  font-size:16px;
+">
+  Create Ticket
+</button>
 
 <script>
 
-const supabase = supabase.createClient(
+const supabaseClient = supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+// ✅ WICHTIG: Button Event richtig
 document.getElementById("createBtn").addEventListener("click", createTicket);
 
 async function createTicket() {
-
-  alert("Button funktioniert"); // TEST
 
   const title = document.getElementById("title").value;
   const category = document.getElementById("category").value;
@@ -38,29 +45,36 @@ async function createTicket() {
   const description = document.getElementById("description").value;
   const file = document.getElementById("image").files[0];
 
+  if (!title || !price) {
+    alert("Bitte Titel und Preis eingeben");
+    return;
+  }
+
   let imageUrl = "";
 
+  // 📸 Upload
   if (file) {
     const fileName = Date.now() + "_" + file.name;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabaseClient.storage
       .from("tickets")
       .upload(fileName, file);
 
     if (uploadError) {
-      alert("Upload Fehler");
+      alert("Image upload failed");
       console.log(uploadError);
       return;
     }
 
-    const { data } = supabase.storage
+    const { data } = supabaseClient.storage
       .from("tickets")
       .getPublicUrl(fileName);
 
     imageUrl = data.publicUrl;
   }
 
-  const { error } = await supabase.from("tickets").insert([
+  // 💾 Save
+  const { error } = await supabaseClient.from("tickets").insert([
     {
       title,
       category,
@@ -71,7 +85,7 @@ async function createTicket() {
   ]);
 
   if (error) {
-    alert("DB Fehler");
+    alert("Fehler beim Speichern");
     console.log(error);
     return;
   }
