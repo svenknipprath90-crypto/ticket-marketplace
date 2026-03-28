@@ -1,82 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <title>My Purchases</title>
+<meta charset="UTF-8">
+<title>Meine Käufe</title>
 
-  <style>
-    body {
-      font-family: Arial;
-      background: linear-gradient(180deg, #020617, #0f172a);
-      color: white;
-      margin: 0;
-      padding: 15px;
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    .card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 12px;
-      padding: 10px;
-      margin-top: 10px;
-    }
+<style>
+body {
+  background:#0b1220;
+  color:white;
+  font-family:sans-serif;
+  padding:20px;
+}
 
-    .title { font-weight: bold; }
-    .small { font-size: 12px; color: #94a3b8; }
-
-    button {
-      margin-top: 10px;
-      width: 100%;
-      padding: 10px;
-      background: #334155;
-      color: white;
-      border-radius: 10px;
-      border: none;
-    }
-  </style>
+.card {
+  background:#1e293b;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+</style>
 </head>
 
 <body>
 
-<h1>📦 My Purchases</h1>
+<h2>💰 Meine Käufe</h2>
+<a href="index.html">← Zurück</a>
 
 <div id="list"></div>
 
-<button onclick="back()">⬅ Back</button>
-
 <script>
-function loadPurchases() {
-  return JSON.parse(localStorage.getItem("purchases")) || [];
-}
 
-function render() {
-  const username = localStorage.getItem("username");
-  const all = loadPurchases();
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+);
 
-  const mine = all.filter(p => p.buyer === username);
+const purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
 
-  const container = document.getElementById("list");
-  container.innerHTML = "";
+async function load() {
 
-  if (mine.length === 0) {
-    container.innerHTML = "<p>No purchases yet</p>";
+  if (purchases.length === 0) {
+    document.getElementById("list").innerHTML = "Noch nichts gekauft";
     return;
   }
 
-  mine.forEach(t => {
+  const { data } = await db
+    .from("tickets")
+    .select("*")
+    .in("id", purchases);
+
+  const container = document.getElementById("list");
+
+  data.forEach(t => {
     container.innerHTML += `
       <div class="card">
-        <div class="title">${t.title}</div>
-        <div class="small">${t.category}</div>
-        <div>${t.price} Pi</div>
+        ${t.title} - ${t.price} Pi
       </div>
     `;
   });
+
 }
 
-function back() {
-  window.location.href = "index.html";
-}
+load();
 
-render();
 </script>
 
 </body>
