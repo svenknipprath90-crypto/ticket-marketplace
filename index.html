@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <title>Pi Ticket Marketplace</title>
+
+  <!-- NUR EIN SCRIPT -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 </head>
 <body style="background:#0b1220;color:white;font-family:sans-serif;padding:20px;">
 
@@ -12,36 +15,31 @@
 <div id="tickets"></div>
 
 <script>
-if (!window.supabaseClient) {
 
-  window.supabaseClient = window.supabase.createClient(
+(async () => {
+
+  const client = window.supabase.createClient(
     "https://rucejmhjgfvlntoxhczm.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
   );
 
-}
-
-const supabase = window.supabaseClient;
-
-async function loadTickets() {
-
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
+    alert(error.message);
     console.error(error);
-    alert("Fehler: " + error.message);
     return;
   }
 
   const container = document.getElementById("tickets");
-  container.innerHTML = "";
 
   data.forEach(ticket => {
 
     const div = document.createElement("div");
+
     div.style.background = "#1e293b";
     div.style.padding = "20px";
     div.style.marginBottom = "20px";
@@ -49,7 +47,6 @@ async function loadTickets() {
 
     div.innerHTML = `
       ${ticket.image ? `<img src="${ticket.image}" style="width:100%;border-radius:10px;margin-bottom:10px;">` : ""}
-
       <h2>${ticket.title}</h2>
       <p>${ticket.category}</p>
       <p>${ticket.description}</p>
@@ -60,9 +57,8 @@ async function loadTickets() {
 
   });
 
-}
+})();
 
-loadTickets();
 </script>
 
 </body>
