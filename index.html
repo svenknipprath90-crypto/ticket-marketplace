@@ -41,6 +41,7 @@ body {
   overflow:hidden;
   margin-bottom:20px;
   box-shadow:0 5px 15px rgba(0,0,0,0.3);
+  cursor:pointer;
 }
 
 .card img {
@@ -56,23 +57,12 @@ body {
 .title {
   font-size:18px;
   font-weight:bold;
-  margin-bottom:5px;
-}
-
-.category {
-  color:#9ca3af;
-  font-size:14px;
 }
 
 .price {
   margin-top:10px;
   font-size:18px;
   font-weight:bold;
-}
-
-.location {
-  font-size:13px;
-  color:#6b7280;
 }
 </style>
 </head>
@@ -102,15 +92,7 @@ const db = window.db;
 
 async function loadTickets() {
 
-  const { data, error } = await db
-    .from("tickets")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
+  const { data } = await db.from("tickets").select("*");
 
   const container = document.getElementById("tickets");
   container.innerHTML = "";
@@ -120,12 +102,14 @@ async function loadTickets() {
     const card = document.createElement("div");
     card.className = "card";
 
+    card.onclick = () => {
+      window.location.href = "ticket.html?id=" + ticket.id;
+    };
+
     card.innerHTML = `
       ${ticket.image ? `<img src="${ticket.image}">` : ""}
       <div class="card-content">
         <div class="title">${ticket.title}</div>
-        <div class="category">${ticket.category}</div>
-        <div class="location">${ticket.description || ""}</div>
         <div class="price">${ticket.price} Pi</div>
       </div>
     `;
