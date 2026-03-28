@@ -50,6 +50,14 @@ body {
   object-fit:cover;
 }
 
+.heart {
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:24px;
+  cursor:pointer;
+}
+
 .card-content {
   padding:15px;
 }
@@ -85,6 +93,26 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+// FAVORITEN LADEN
+function getFavorites() {
+  return JSON.parse(localStorage.getItem("favorites") || "[]");
+}
+
+// LIKE TOGGLE
+function toggleFavorite(id) {
+  let favs = getFavorites();
+
+  if (favs.includes(id)) {
+    favs = favs.filter(f => f !== id);
+  } else {
+    favs.push(id);
+  }
+
+  localStorage.setItem("favorites", JSON.stringify(favs));
+
+  loadTickets(); // neu rendern
+}
+
 async function loadTickets() {
 
   const { data, error } = await db
@@ -106,13 +134,22 @@ async function loadTickets() {
 
   container.innerHTML = "";
 
+  const favs = getFavorites();
+
   data.forEach(ticket => {
+
+    const liked = favs.includes(ticket.id);
 
     const div = document.createElement("div");
     div.className = "card";
 
     div.innerHTML = `
+      <div class="heart" onclick="event.stopPropagation(); toggleFavorite(${ticket.id})">
+        ${liked ? "❤️" : "🤍"}
+      </div>
+
       ${ticket.image ? `<img src="${ticket.image}">` : ""}
+
       <div class="card-content">
         <div class="title">${ticket.title}</div>
         <div>${ticket.category || ""}</div>
