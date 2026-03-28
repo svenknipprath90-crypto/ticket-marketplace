@@ -12,7 +12,16 @@ body {
   font-family:sans-serif;
   background:#0b1220;
   color:white;
+}
+
+.header {
   padding:20px;
+  font-size:22px;
+  font-weight:bold;
+}
+
+.container {
+  padding:15px;
 }
 
 .card {
@@ -20,6 +29,7 @@ body {
   border-radius:15px;
   overflow:hidden;
   margin-bottom:20px;
+  cursor:pointer;
 }
 
 .card img {
@@ -28,31 +38,48 @@ body {
   object-fit:cover;
 }
 
+.card-content {
+  padding:15px;
+}
+
 .title {
-  padding:10px;
+  font-size:18px;
   font-weight:bold;
+}
+
+.price {
+  margin-top:10px;
+  font-size:18px;
+  font-weight:bold;
+}
+
+.back {
+  display:inline-block;
+  margin-bottom:20px;
+  color:#60a5fa;
+  text-decoration:none;
 }
 </style>
 </head>
 
 <body>
 
-<h2>❤️ Deine Favoriten</h2>
+<div class="header">❤️ Favoriten</div>
 
-<a href="index.html">← Zurück</a>
+<div class="container">
 
-<div id="tickets"></div>
+<a href="index.html" class="back">← Zurück</a>
+
+<div id="tickets">Lade Favoriten...</div>
+
+</div>
 
 <script>
 
-if (!window.db) {
-  window.db = window.supabase.createClient(
-    "https://rucejmhjgfvlntoxhczm.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  );
-}
-
-const db = window.db;
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
 
 function getFavorites() {
   return JSON.parse(localStorage.getItem("favorites") || "[]");
@@ -61,27 +88,46 @@ function getFavorites() {
 async function loadFavorites() {
 
   const favs = getFavorites();
+  const container = document.getElementById("tickets");
 
   if (favs.length === 0) {
-    document.getElementById("tickets").innerHTML = "Keine Favoriten";
+    container.innerHTML = "Keine Favoriten ❤️";
     return;
   }
 
-  const { data } = await db
+  const { data, error } = await db
     .from("tickets")
     .select("*")
     .in("id", favs);
 
-  const container = document.getElementById("tickets");
+  if (error) {
+    container.innerHTML = "Fehler: " + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    container.innerHTML = "Keine Favoriten gefunden";
+    return;
+  }
+
+  container.innerHTML = "";
 
   data.forEach(ticket => {
 
     const div = document.createElement("div");
     div.className = "card";
 
+    div.onclick = () => {
+      window.location.href = "ticket.html?id=" + ticket.id;
+    };
+
     div.innerHTML = `
       ${ticket.image ? `<img src="${ticket.image}">` : ""}
-      <div class="title">${ticket.title} - ${ticket.price} Pi</div>
+      <div class="card-content">
+        <div class="title">${ticket.title}</div>
+        <div>${ticket.category || ""}</div>
+        <div class="price">${ticket.price} Pi</div>
+      </div>
     `;
 
     container.appendChild(div);
