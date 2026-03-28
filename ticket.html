@@ -36,6 +36,17 @@ img {
   color:#9ca3af;
 }
 
+.button {
+  display:block;
+  margin-top:20px;
+  padding:15px;
+  text-align:center;
+  background:#16a34a;
+  border-radius:10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
 .back {
   display:inline-block;
   margin-bottom:20px;
@@ -52,14 +63,10 @@ img {
 
 <script>
 
-if (!window.db) {
-  window.db = window.supabase.createClient(
-    "https://rucejmhjgfvlntoxhczm.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
-  );
-}
-
-const db = window.db;
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+);
 
 const params = new URLSearchParams(window.location.search);
 const id = params.get("id");
@@ -79,7 +86,25 @@ async function loadTicket() {
     <div class="title">${data.title}</div>
     <div class="price">${data.price} Pi</div>
     <div class="desc">${data.description}</div>
+
+    <div class="button" onclick="buyTicket(${data.id})">
+      💰 Kaufen
+    </div>
   `;
+}
+
+// KAUF FUNKTION
+function buyTicket(id) {
+
+  let purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
+
+  if (!purchases.includes(id)) {
+    purchases.push(id);
+  }
+
+  localStorage.setItem("purchases", JSON.stringify(purchases));
+
+  alert("✅ Ticket gekauft!");
 }
 
 loadTicket();
