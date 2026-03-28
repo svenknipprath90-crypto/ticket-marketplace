@@ -21,10 +21,8 @@ async function loadTickets() {
 
   const { data, error } = await supabase
     .from("tickets")
-    .select("*");
-
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
+    .select("*")
+    .order("created_at", { ascending: false });
 
   if (error) {
     alert("Fehler: " + error.message);
@@ -33,11 +31,6 @@ async function loadTickets() {
 
   const container = document.getElementById("tickets");
   container.innerHTML = "";
-
-  if (!data || data.length === 0) {
-    container.innerHTML = "<p>Keine Tickets gefunden</p>";
-    return;
-  }
 
   data.forEach(ticket => {
 
