@@ -1,83 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
+  <meta charset="UTF-8">
   <title>Pi Ticket Marketplace</title>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+<body style="background:#0b1220;color:white;font-family:sans-serif;padding:20px;">
 
-<body style="background:#0f172a; color:white; font-family:Arial; padding:20px;">
-
-<h2>Pi Ticket Marketplace</h2>
+<h1>Pi Ticket Marketplace</h1>
 
 <div id="tickets"></div>
 
-<br><br>
-
-<a href="create.html">
-  <button style="
-    background:#22c55e;
-    color:white;
-    border:none;
-    padding:12px;
-    width:100%;
-    border-radius:10px;
-    font-size:16px;
-  ">
-    Create Ticket
-  </button>
-</a>
-
 <script>
-
-const supabaseClient = supabase.createClient(
+const supabase = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
 async function loadTickets() {
 
-  const { data, error } = await supabaseClient
+  const { data, error } = await supabase
     .from("tickets")
     .select("*")
-    .order("id", { ascending: false });
-
-  if (error) {
-    console.log(error);
-    document.getElementById("tickets").innerHTML = "Error loading tickets";
-    return;
-  }
+    .order("created_at", { ascending: false });
 
   const container = document.getElementById("tickets");
   container.innerHTML = "";
 
-  if (!data || data.length === 0) {
-    container.innerHTML = "<p>No tickets yet</p>";
-    return;
-  }
-
   data.forEach(ticket => {
 
     const div = document.createElement("div");
-
     div.style.background = "#1e293b";
-    div.style.padding = "15px";
-    div.style.marginBottom = "15px";
+    div.style.padding = "20px";
+    div.style.marginBottom = "20px";
     div.style.borderRadius = "10px";
 
     div.innerHTML = `
-      <h3>${ticket.title}</h3>
+      ${ticket.image ? `<img src="${ticket.image}" style="width:100%;border-radius:10px;margin-bottom:10px;">` : ""}
+
+      <h2>${ticket.title}</h2>
       <p>${ticket.category}</p>
       <p>${ticket.description}</p>
-      <p><b>${ticket.price} Pi</b></p>
-      ${ticket.image_url ? `<img src="${ticket.image_url}" style="width:100%; border-radius:10px; margin-top:10px;">` : ""}
+      <p><strong>${ticket.price} Pi</strong></p>
     `;
 
     container.appendChild(div);
+
   });
+
 }
 
 loadTickets();
-
 </script>
 
 </body>
