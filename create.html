@@ -15,7 +15,9 @@
   <textarea id="description" placeholder="Description"></textarea><br><br>
   <input type="file" id="image"><br><br>
 
-  <button id="createBtn">Create Ticket</button>
+  <button id="createBtn" style="padding:10px;background:green;color:white;">
+    Create Ticket
+  </button>
 
   <script>
     window.onload = () => {
@@ -27,8 +29,6 @@
 
       document.getElementById("createBtn").onclick = async function () {
 
-        alert("BUTTON GEHT"); // <-- MUSS kommen
-
         const title = document.getElementById("title").value;
         const category = document.getElementById("category").value;
         const price = document.getElementById("price").value;
@@ -37,6 +37,7 @@
 
         let imageUrl = "";
 
+        // 🔥 Upload Bild
         if (file) {
           const fileName = Date.now() + "_" + file.name;
 
@@ -56,6 +57,7 @@
           imageUrl = data.publicUrl;
         }
 
+        // 🔥 In DB speichern
         const { error } = await supabase.from("tickets").insert([
           {
             title: title,
@@ -70,6 +72,7 @@
           alert("DB Fehler: " + error.message);
         } else {
           alert("Ticket erstellt!");
+          window.location.href = "index.html";
         }
 
       };
