@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Pi Ticket Marketplace</title>
+<meta charset="UTF-8">
+<title>Pi Ticket Marketplace</title>
 
-  <!-- NUR EIN SCRIPT -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
+
 <body style="background:#0b1220;color:white;font-family:sans-serif;padding:20px;">
 
 <h1>Pi Ticket Marketplace</h1>
@@ -16,25 +15,30 @@
 
 <script>
 
-(async () => {
-
-  const client = window.supabase.createClient(
+// Supabase einmal erstellen
+if (!window.db) {
+  window.db = window.supabase.createClient(
     "https://rucejmhjgfvlntoxhczm.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
   );
+}
 
-  const { data, error } = await client
+const db = window.db;
+
+async function loadTickets() {
+
+  const { data, error } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
 
   if (error) {
     alert(error.message);
-    console.error(error);
     return;
   }
 
   const container = document.getElementById("tickets");
+  container.innerHTML = "";
 
   data.forEach(ticket => {
 
@@ -57,7 +61,9 @@
 
   });
 
-})();
+}
+
+loadTickets();
 
 </script>
 
