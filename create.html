@@ -7,7 +7,7 @@
 </head>
 <body style="background:#0b1220;color:white;font-family:sans-serif;padding:20px;">
 
-  <h1>TEST 123</h1>
+  <h1>Create Ticket</h1>
 
   <input id="title" placeholder="Title"><br><br>
   <input id="category" placeholder="Category"><br><br>
@@ -15,64 +15,66 @@
   <textarea id="description" placeholder="Description"></textarea><br><br>
   <input type="file" id="image"><br><br>
 
-  <button id="createBtn" style="padding:10px;background:green;color:white;">
-    Create Ticket
-  </button>
+  <button id="createBtn">Create Ticket</button>
 
   <script>
-    const supabase = window.supabase.createClient(
-      "https://rucejmhjgfvlntoxhczm.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
-    );
+    window.onload = () => {
 
-    document.getElementById("createBtn").addEventListener("click", async () => {
+      const supabase = window.supabase.createClient(
+        "https://rucejmhjgfvlntoxhczm.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+      );
 
-      alert("BUTTON GEKLICKT");
+      document.getElementById("createBtn").onclick = async function () {
 
-      const title = document.getElementById("title").value;
-      const category = document.getElementById("category").value;
-      const price = document.getElementById("price").value;
-      const description = document.getElementById("description").value;
-      const file = document.getElementById("image").files[0];
+        alert("BUTTON GEHT"); // <-- MUSS kommen
 
-      let imageUrl = "";
+        const title = document.getElementById("title").value;
+        const category = document.getElementById("category").value;
+        const price = document.getElementById("price").value;
+        const description = document.getElementById("description").value;
+        const file = document.getElementById("image").files[0];
 
-      if (file) {
-        const fileName = Date.now() + "_" + file.name;
+        let imageUrl = "";
 
-        const { error: uploadError } = await supabase.storage
-          .from("tickets")
-          .upload(fileName, file);
+        if (file) {
+          const fileName = Date.now() + "_" + file.name;
 
-        if (uploadError) {
-          alert("Upload Fehler: " + uploadError.message);
-          return;
+          const { error: uploadError } = await supabase.storage
+            .from("tickets")
+            .upload(fileName, file);
+
+          if (uploadError) {
+            alert("Upload Fehler: " + uploadError.message);
+            return;
+          }
+
+          const { data } = supabase.storage
+            .from("tickets")
+            .getPublicUrl(fileName);
+
+          imageUrl = data.publicUrl;
         }
 
-        const { data } = supabase.storage
-          .from("tickets")
-          .getPublicUrl(fileName);
+        const { error } = await supabase.from("tickets").insert([
+          {
+            title: title,
+            category: category,
+            price: Number(price),
+            description: description,
+            image: imageUrl
+          }
+        ]);
 
-        imageUrl = data.publicUrl;
-      }
-
-      const { error } = await supabase.from("tickets").insert([
-        {
-          title: title,
-          category: category,
-          price: Number(price),
-          description: description,
-          image: imageUrl
+        if (error) {
+          alert("DB Fehler: " + error.message);
+        } else {
+          alert("Ticket erstellt!");
         }
-      ]);
 
-      if (error) {
-        alert("DB Fehler: " + error.message);
-      } else {
-        alert("Ticket erstellt!");
-      }
+      };
 
-    });
+    };
   </script>
 
 </body>
