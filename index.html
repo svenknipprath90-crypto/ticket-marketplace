@@ -24,6 +24,11 @@ async function loadTickets() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  if (error) {
+    alert("Fehler: " + error.message);
+    return;
+  }
+
   const container = document.getElementById("tickets");
   container.innerHTML = "";
 
