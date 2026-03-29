@@ -56,6 +56,10 @@ img {
 
 <script>
 
+// ================= USER =================
+
+let currentUser = localStorage.getItem("pi_user");
+
 // ================= SUPABASE =================
 
 const db = window.supabase.createClient(
@@ -63,7 +67,7 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// ================= PARAMETER =================
+// ================= PARAMS =================
 
 const params = new URLSearchParams(window.location.search);
 const ticketId = params.get("id");
@@ -90,6 +94,10 @@ async function loadTicket() {
 
 function render(t) {
 
+  // 💰 FEE berechnen (10%)
+  const fee = (t.price * 0.1).toFixed(2);
+  const total = (parseFloat(t.price) + parseFloat(fee)).toFixed(2);
+
   document.getElementById("content").innerHTML = `
     ${t.image ? `<img src="${t.image}">` : ""}
 
@@ -98,30 +106,58 @@ function render(t) {
     <p>${t.description}</p>
 
     <h3>${t.price} Pi</h3>
+    <p>Service Fee: ${fee} Pi</p>
+    <h2>Gesamt: ${total} Pi</h2>
 
     <br>
 
-    <button class="button" onclick="buyTicket(${t.price})">
-      💸 Ticket kaufen
+    <button class="button" onclick="buyTicket(${total})">
+      💸 Jetzt kaufen
     </button>
   `;
 }
 
-// ================= PAYMENT (PREP) =================
+// ================= PAYMENT =================
 
-async function buyTicket(price) {
+async function buyTicket(amount) {
 
-  const user = localStorage.getItem("pi_user");
-
-  if (!user) {
+  if (!currentUser) {
     alert("Bitte erst einloggen");
     return;
   }
 
-  alert("Payment wird vorbereitet: " + price + " Pi");
+  try {
 
-  // HIER kommt später:
-  // Pi.createPayment(...)
+    await Pi.init({ version: "2.0" });
+
+    const payment = await Pi.createPayment({
+      amount: amount,
+      memo: "Ticket Kauf",
+      metadata: { ticketId: ticketId }
+    }, {
+
+      onReadyForServerApproval: (paymentId) => {
+        console.log("Approve:", paymentId);
+      },
+
+      onReadyForServerCompletion: (paymentId, txid) => {
+        console.log("Completed:", txid);
+        alert("✅ Zahlung erfolgreich!");
+      },
+
+      onCancel: () => {
+        alert("❌ Zahlung abgebrochen");
+      },
+
+      onError: (error) => {
+        alert("Fehler: " + error.message);
+      }
+
+    });
+
+  } catch (e) {
+    alert("Payment nur im Pi Browser möglich");
+  }
 }
 
 // ================= INIT =================
