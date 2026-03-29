@@ -141,10 +141,13 @@ async function loadFavorites() {
 }
 
 
-// FAVORITEN TOGGLE
+// FAVORITEN TOGGLE (DEBUG FIX)
 async function toggleFavorite(ticketId) {
 
   const user = localStorage.getItem("pi_user");
+
+  console.log("USER:", user);
+  console.log("TICKET:", ticketId);
 
   if (!user) {
     alert("Bitte erst einloggen!");
@@ -154,19 +157,25 @@ async function toggleFavorite(ticketId) {
   const exists = favorites.includes(ticketId);
 
   if (exists) {
-    await db
+
+    const { error } = await db
       .from("favorites")
       .delete()
       .eq("user_id", user)
       .eq("ticket_id", ticketId);
 
+    console.log("DELETE:", error);
+
   } else {
-    await db
+
+    const { error } = await db
       .from("favorites")
       .insert({
         user_id: user,
         ticket_id: ticketId
       });
+
+    console.log("INSERT:", error);
   }
 
   loadFavorites();
