@@ -84,7 +84,7 @@ body {
 
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
@@ -98,20 +98,32 @@ function isFavorite(id) {
 }
 
 function toggleFavorite(id) {
-
   if (isFavorite(id)) {
     favorites = favorites.filter(f => f !== id);
   } else {
     favorites.push(id);
   }
-
   saveFavorites();
   loadTickets();
 }
 
 async function loadTickets() {
 
-  const { data } = await db.from("tickets").select("*");
+  const { data, error } = await db
+    .from("tickets")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    document.getElementById("tickets").innerText = "Fehler: " + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    document.getElementById("tickets").innerText = "Keine Tickets vorhanden";
+    return;
+  }
 
   const el = document.getElementById("tickets");
   el.innerHTML = "";
