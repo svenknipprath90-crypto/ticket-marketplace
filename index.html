@@ -20,13 +20,12 @@ body {
   font-weight:bold;
 }
 
-.container {
+.top-buttons {
   padding:15px;
 }
 
 .button {
   display:inline-block;
-  margin-bottom:10px;
   margin-right:10px;
   padding:12px 18px;
   background:#2563eb;
@@ -34,6 +33,10 @@ body {
   border-radius:10px;
   text-decoration:none;
   font-weight:bold;
+}
+
+#tickets {
+  padding:15px;
 }
 
 .card {
@@ -52,6 +55,11 @@ body {
 .card-content {
   padding:15px;
 }
+
+.like {
+  cursor:pointer;
+  font-size:20px;
+}
 </style>
 </head>
 
@@ -59,15 +67,13 @@ body {
 
 <div class="header">Pi Ticket Marketplace</div>
 
-<div class="container">
-
-<a href="create.html" class="button">➕ Ticket erstellen</a>
-<a href="favorites.html" class="button">❤️ Favoriten</a>
-<a href="login.html" class="button">👤 Login</a>
+<div class="top-buttons">
+  <a href="create.html" class="button">➕ Ticket erstellen</a>
+  <a href="favorites.html" class="button">❤️ Favoriten</a>
+  <a href="login.html" class="button">👤 Login</a>
+</div>
 
 <div id="tickets">Lade Tickets...</div>
-
-</div>
 
 <script>
 
@@ -75,6 +81,22 @@ const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
+
+function addToFavorites(ticket) {
+  let favs = JSON.parse(localStorage.getItem("favorites")) || [];
+
+  const exists = favs.find(t => t.id === ticket.id);
+
+  if (exists) {
+    favs = favs.filter(t => t.id !== ticket.id);
+    alert("❌ Entfernt aus Favoriten");
+  } else {
+    favs.push(ticket);
+    alert("❤️ Gespeichert");
+  }
+
+  localStorage.setItem("favorites", JSON.stringify(favs));
+}
 
 async function loadTickets() {
 
@@ -106,6 +128,8 @@ async function loadTickets() {
           <p>${t.category}</p>
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
+          <br><br>
+          <span class="like" onclick='addToFavorites(${JSON.stringify(t)})'>❤️ Favorit</span>
         </div>
       </div>
     `;
