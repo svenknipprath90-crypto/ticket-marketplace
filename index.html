@@ -42,8 +42,8 @@ body {
 .card {
   background:#1e293b;
   border-radius:15px;
-  overflow:hidden;
   margin-bottom:20px;
+  overflow:hidden;
 }
 
 .card img {
@@ -52,17 +52,17 @@ body {
   object-fit:cover;
 }
 
-.card-content {
+.content {
   padding:15px;
 }
 
-.like {
-  cursor:pointer;
+.heart {
   font-size:24px;
+  cursor:pointer;
   color:gray;
 }
 
-.liked {
+.heart.active {
   color:red;
 }
 </style>
@@ -82,71 +82,67 @@ body {
 
 <script>
 
-// ✅ Supabase
+// Supabase
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// ❤️ Favoriten laden
+// Favoriten
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-favorites = favorites.map(id => Number(id));
 
-// speichern
 function saveFavorites() {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
-// prüfen
-function isFavorite(id) {
-  return favorites.includes(Number(id));
-}
-
-// togglen
 function toggleFavorite(id) {
 
   id = Number(id);
 
-  if (isFavorite(id)) {
+  if (favorites.includes(id)) {
     favorites = favorites.filter(f => f !== id);
   } else {
     favorites.push(id);
   }
 
   saveFavorites();
-  loadTickets();
+  render(); // 🔥 direkt neu rendern
 }
 
 // Tickets laden
+let ticketsData = [];
+
 async function loadTickets() {
 
-  const { data, error } = await db
+  const { data } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    document.getElementById("tickets").innerText = error.message;
-    return;
-  }
+  ticketsData = data;
+  render();
+}
+
+// Render (wie alte App!)
+function render() {
 
   const el = document.getElementById("tickets");
   el.innerHTML = "";
 
-  data.forEach(t => {
+  ticketsData.forEach(t => {
 
-    const liked = isFavorite(t.id) ? "liked" : "";
+    const active = favorites.includes(t.id) ? "active" : "";
 
     el.innerHTML += `
       <div class="card">
         ${t.image ? `<img src="${t.image}">` : ""}
-        <div class="card-content">
+        <div class="content">
           <h3>${t.title}</h3>
           <p>${t.category}</p>
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
           <br><br>
-          <span class="like ${liked}" onclick="toggleFavorite(${t.id})">❤️</span>
+          <span class="heart ${active}" onclick="toggleFavorite(${t.id})">❤️</span>
         </div>
       </div>
     `;
@@ -154,7 +150,6 @@ async function loadTickets() {
 
 }
 
-// Start
 loadTickets();
 
 </script>
