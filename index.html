@@ -87,22 +87,28 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+// 🔥 FAVORITEN LADEN UND FIXEN
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+favorites = favorites.map(id => Number(id));
 
 function saveFavorites() {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
 function isFavorite(id) {
-  return favorites.includes(id);
+  return favorites.includes(Number(id));
 }
 
 function toggleFavorite(id) {
+
+  id = Number(id); // 🔥 WICHTIG
+
   if (isFavorite(id)) {
     favorites = favorites.filter(f => f !== id);
   } else {
     favorites.push(id);
   }
+
   saveFavorites();
   loadTickets();
 }
@@ -115,7 +121,6 @@ async function loadTickets() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error(error);
     document.getElementById("tickets").innerText = "Fehler: " + error.message;
     return;
   }
