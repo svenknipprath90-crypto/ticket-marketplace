@@ -59,6 +59,7 @@ body {
 .like {
   cursor:pointer;
   font-size:24px;
+  color:gray;
 }
 
 .liked {
@@ -81,23 +82,27 @@ body {
 
 <script>
 
-// ✅ DEIN ORIGINALER, KORREKTER KEY
+// ✅ Supabase
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+// ❤️ Favoriten laden
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 favorites = favorites.map(id => Number(id));
 
+// speichern
 function saveFavorites() {
   localStorage.setItem("favorites", JSON.stringify(favorites));
 }
 
+// prüfen
 function isFavorite(id) {
   return favorites.includes(Number(id));
 }
 
+// togglen
 function toggleFavorite(id) {
 
   id = Number(id);
@@ -112,6 +117,7 @@ function toggleFavorite(id) {
   loadTickets();
 }
 
+// Tickets laden
 async function loadTickets() {
 
   const { data, error } = await db
@@ -148,6 +154,7 @@ async function loadTickets() {
 
 }
 
+// Start
 loadTickets();
 
 </script>
