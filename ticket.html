@@ -8,19 +8,46 @@
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
 <style>
-body { margin:0; font-family:sans-serif; background:#0b1220; color:white; }
-.container { padding:20px; }
-img { width:100%; border-radius:15px; margin-bottom:15px; }
-.button { padding:15px; width:100%; border:none; border-radius:10px; background:#22c55e; color:white; font-size:18px; }
-.back { color:#60a5fa; display:block; margin-bottom:15px; }
+body {
+  margin: 0;
+  font-family: sans-serif;
+  background: #0b1220;
+  color: white;
+}
+
+.container {
+  padding: 20px;
+}
+
+img {
+  width: 100%;
+  border-radius: 15px;
+  margin-bottom: 15px;
+}
+
+.button {
+  padding: 15px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #22c55e;
+  color: white;
+  font-size: 18px;
+}
+
+.back {
+  color: #60a5fa;
+  display: block;
+  margin-bottom: 15px;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-<a href="index.html" class="back">⬅ Zurück</a>
-<div id="content">Lade...</div>
+  <a href="index.html" class="back">⬅ Zurück</a>
+  <div id="content">Lade...</div>
 </div>
 
 <script>
@@ -28,16 +55,12 @@ img { width:100%; border-radius:15px; margin-bottom:15px; }
 // ================= PI INIT =================
 Pi.init({ version: "2.0", sandbox: true });
 
-// ================= LOGIN MIT PAYMENTS =================
+// ================= LOGIN =================
 let currentUser = null;
 
 async function login() {
   try {
-    const scopes = ["payments", "username"];
-
-    const auth = await Pi.authenticate(scopes, function(payment) {
-      console.log("Incomplete payment:", payment);
-    });
+    const auth = await Pi.authenticate(["payments", "username"]);
 
     currentUser = auth.user.username;
     localStorage.setItem("pi_user", currentUser);
@@ -49,8 +72,10 @@ async function login() {
   }
 }
 
-// 👉 AUTO LOGIN BEIM LADEN
-login();
+// 👉 WICHTIG: erst nach init!
+window.onload = () => {
+  login();
+};
 
 
 // ================= SUPABASE =================
@@ -60,16 +85,22 @@ const db = window.supabase.createClient(
 );
 
 
-// ================= LOAD =================
+// ================= LOAD TICKET =================
 const params = new URLSearchParams(window.location.search);
 const ticketId = params.get("id");
 
 async function loadTicket() {
-  const { data } = await db
+
+  const { data, error } = await db
     .from("tickets")
     .select("*")
     .eq("id", ticketId)
     .single();
+
+  if (error) {
+    document.getElementById("content").innerHTML = "Fehler beim Laden";
+    return;
+  }
 
   render(data);
 }
@@ -84,11 +115,12 @@ function render(t) {
   document.getElementById("content").innerHTML = `
     ${t.image ? `<img src="${t.image}">` : ""}
     <h2>${t.title}</h2>
-    <p>${t.category}</p>
+    <p>Kategorie: ${t.category}</p>
+    <p>${t.location}</p>
     <h3>${t.price} Pi</h3>
-    <p>Fee: ${fee} Pi</p>
-    <h2>Total: ${total} Pi</h2>
-    <button class="button" onclick="buy(${total})">💸 Kaufen</button>
+    <p>Service Fee: ${fee} Pi</p>
+    <h2>Gesamt: ${total} Pi</h2>
+    <button class="button" onclick="buy(${total})">💸 Jetzt kaufen</button>
   `;
 }
 
@@ -107,10 +139,18 @@ async function buy(amount) {
       memo: "Ticket Kauf",
       metadata: { ticketId: ticketId }
     }, {
-      onReadyForServerApproval: (id) => console.log("approve", id),
-      onReadyForServerCompletion: (id, tx) => alert("✅ bezahlt"),
-      onCancel: () => alert("❌ abgebrochen"),
-      onError: (e) => alert("Fehler: " + e.message)
+      onReadyForServerApproval: (id) => {
+        console.log("approve", id);
+      },
+      onReadyForServerCompletion: (id, tx) => {
+        alert("✅ Zahlung erfolgreich");
+      },
+      onCancel: () => {
+        alert("❌ Zahlung abgebrochen");
+      },
+      onError: (e) => {
+        alert("Fehler: " + e.message);
+      }
     });
 
   } catch (e) {
