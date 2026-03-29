@@ -87,7 +87,6 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// 🔥 FAVORITEN LADEN UND FIXEN
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 favorites = favorites.map(id => Number(id));
 
@@ -101,7 +100,7 @@ function isFavorite(id) {
 
 function toggleFavorite(id) {
 
-  id = Number(id); // 🔥 WICHTIG
+  id = Number(id);
 
   if (isFavorite(id)) {
     favorites = favorites.filter(f => f !== id);
@@ -115,20 +114,10 @@ function toggleFavorite(id) {
 
 async function loadTickets() {
 
-  const { data, error } = await db
+  const { data } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
-
-  if (error) {
-    document.getElementById("tickets").innerText = "Fehler: " + error.message;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    document.getElementById("tickets").innerText = "Keine Tickets vorhanden";
-    return;
-  }
 
   const el = document.getElementById("tickets");
   el.innerHTML = "";
@@ -137,28 +126,21 @@ async function loadTickets() {
 
     const liked = isFavorite(t.id) ? "liked" : "";
 
-    const card = document.createElement("div");
-    card.className = "card";
-
-    card.innerHTML = `
-      ${t.image ? `<img src="${t.image}">` : ""}
-      <div class="card-content">
-        <h3>${t.title}</h3>
-        <p>${t.category}</p>
-        <p>${t.description}</p>
-        <strong>${t.price} Pi</strong>
-        <br><br>
-        <span class="like ${liked}" data-id="${t.id}">❤️</span>
+    el.innerHTML += `
+      <div class="card">
+        ${t.image ? `<img src="${t.image}">` : ""}
+        <div class="card-content">
+          <h3>${t.title}</h3>
+          <p>${t.category}</p>
+          <p>${t.description}</p>
+          <strong>${t.price} Pi</strong>
+          <br><br>
+          <span class="like ${liked}" onclick="toggleFavorite(${t.id})">
+            ❤️
+          </span>
+        </div>
       </div>
     `;
-
-    el.appendChild(card);
-  });
-
-  document.querySelectorAll(".like").forEach(el => {
-    el.addEventListener("click", () => {
-      toggleFavorite(el.dataset.id);
-    });
   });
 
 }
