@@ -74,7 +74,6 @@ body {
 <div class="top-buttons">
   <a href="create.html" class="button">➕ Ticket erstellen</a>
   <a href="favorites.html" class="button">❤️ Favoriten</a>
-  <a href="login.html" class="button">👤 Login</a>
 </div>
 
 <div id="tickets"></div>
@@ -86,6 +85,8 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+let allTickets = [];
+
 function getFavorites() {
   return JSON.parse(localStorage.getItem("favorites")) || [];
 }
@@ -94,17 +95,23 @@ function isFavorite(id) {
   return getFavorites().some(t => t.id === id);
 }
 
-function toggleFavorite(ticket) {
+function toggleFavorite(id) {
+
   let favs = getFavorites();
 
-  if (isFavorite(ticket.id)) {
-    favs = favs.filter(t => t.id !== ticket.id);
+  const ticket = allTickets.find(t => t.id === id);
+
+  if (!ticket) return;
+
+  if (isFavorite(id)) {
+    favs = favs.filter(t => t.id !== id);
   } else {
     favs.push(ticket);
   }
 
   localStorage.setItem("favorites", JSON.stringify(favs));
-  loadTickets(); // 🔥 reload damit Farbe aktualisiert wird
+
+  loadTickets(); // neu rendern
 }
 
 async function loadTickets() {
@@ -113,6 +120,8 @@ async function loadTickets() {
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
+
+  allTickets = data;
 
   const el = document.getElementById("tickets");
   el.innerHTML = "";
@@ -130,7 +139,7 @@ async function loadTickets() {
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
           <br><br>
-          <span class="like ${likedClass}" onclick='toggleFavorite(${JSON.stringify(t)})'>
+          <span class="like ${likedClass}" onclick="toggleFavorite('${t.id}')">
             ❤️
           </span>
         </div>
