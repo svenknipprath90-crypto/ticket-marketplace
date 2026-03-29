@@ -57,13 +57,14 @@ body {
 }
 
 .heart {
-  font-size:24px;
+  font-size:26px;
   cursor:pointer;
-  color:gray;
+  color:#666;
+  transition:0.2s;
 }
 
 .heart.active {
-  color:red;
+  color:#ff3b3b;
 }
 </style>
 </head>
@@ -88,7 +89,7 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// ❤️ Favoriten sauber laden
+// Favoriten laden (WICHTIG: Number!)
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 favorites = favorites.map(id => Number(id));
 
@@ -124,7 +125,7 @@ async function loadTickets() {
   render();
 }
 
-// Render
+// Render (wie deine alte funktionierende App)
 function render() {
 
   const el = document.getElementById("tickets");
@@ -143,7 +144,7 @@ function render() {
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
           <br><br>
-          <span class="heart ${active}" onclick="toggleFavorite(${t.id})">❤️</span>
+          <span class="heart ${active}" onclick="toggleFavorite(${t.id})">♥</span>
         </div>
       </div>
     `;
