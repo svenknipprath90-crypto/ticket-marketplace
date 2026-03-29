@@ -81,7 +81,7 @@ body {
 <body>
 
 <div class="header">
-  <div>Pi Ticket Marketplace</div>
+  <div>🎟️ Pi Ticket Marketplace</div>
   <div id="user"></div>
 </div>
 
@@ -172,7 +172,9 @@ async function loadFavorites() {
   render();
 }
 
-async function toggleFavorite(ticketId) {
+async function toggleFavorite(ticketId, event) {
+
+  event.stopPropagation(); // wichtig wegen Klick auf Karte
 
   if (!currentUser) {
     alert("Bitte erst einloggen!");
@@ -231,7 +233,7 @@ function render() {
     const isFav = favorites.includes(t.id);
 
     el.innerHTML += `
-      <div class="card">
+      <div class="card" onclick="window.location.href='ticket.html?id=${t.id}'" style="cursor:pointer;">
         ${t.image ? `<img src="${t.image}">` : ""}
         <div class="content">
           <h3>${t.title}</h3>
@@ -240,7 +242,7 @@ function render() {
           <strong>${t.price} Pi</strong>
           <br><br>
 
-          <span class="heart" onclick="toggleFavorite(${t.id})">
+          <span class="heart" onclick="toggleFavorite(${t.id}, event)">
             ${isFav ? "❤️" : "🤍"}
           </span>
 
