@@ -1,19 +1,15 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Favoriten</title>
+
 <style>
 body {
-  margin:0;
-  font-family:sans-serif;
   background:#0b1220;
   color:white;
-}
-
-.header {
+  font-family:sans-serif;
   padding:20px;
-  font-size:22px;
-  font-weight:bold;
-}
-
-.container {
-  padding:15px;
 }
 
 .card {
@@ -21,35 +17,62 @@ body {
   border-radius:15px;
   overflow:hidden;
   margin-bottom:20px;
-  cursor:pointer;
 }
 
 .card img {
   width:100%;
-  height:auto; /* 🔥 DAS IST DER FIX */
-  max-height:400px; /* optional */
-  object-fit:contain; /* 🔥 wichtig */
+  height:220px;
+  object-fit:cover;
 }
 
 .card-content {
   padding:15px;
 }
-
-.title {
-  font-size:18px;
-  font-weight:bold;
-}
-
-.price {
-  margin-top:10px;
-  font-size:18px;
-  font-weight:bold;
-}
-
-.back {
-  display:inline-block;
-  margin-bottom:20px;
-  color:#60a5fa;
-  text-decoration:none;
-}
 </style>
+</head>
+
+<body>
+
+<h1>❤️ Favoriten</h1>
+
+<a href="index.html" style="color:#2563eb;">⬅ Zurück</a>
+
+<div id="list"></div>
+
+<script>
+
+function loadFavorites() {
+
+  const favs = JSON.parse(localStorage.getItem("favorites")) || [];
+
+  const el = document.getElementById("list");
+
+  if (favs.length === 0) {
+    el.innerHTML = "Keine Favoriten";
+    return;
+  }
+
+  el.innerHTML = "";
+
+  favs.forEach(t => {
+    el.innerHTML += `
+      <div class="card">
+        ${t.image ? `<img src="${t.image}">` : ""}
+        <div class="card-content">
+          <h3>${t.title}</h3>
+          <p>${t.category}</p>
+          <p>${t.description}</p>
+          <strong>${t.price} Pi</strong>
+        </div>
+      </div>
+    `;
+  });
+
+}
+
+loadFavorites();
+
+</script>
+
+</body>
+</html>
