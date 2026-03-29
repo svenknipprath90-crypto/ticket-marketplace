@@ -88,8 +88,9 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// Favoriten
+// ❤️ Favoriten sauber laden
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
+favorites = favorites.map(id => Number(id));
 
 function saveFavorites() {
   localStorage.setItem("favorites", JSON.stringify(favorites));
@@ -106,7 +107,7 @@ function toggleFavorite(id) {
   }
 
   saveFavorites();
-  render(); // 🔥 direkt neu rendern
+  render();
 }
 
 // Tickets laden
@@ -123,7 +124,7 @@ async function loadTickets() {
   render();
 }
 
-// Render (wie alte App!)
+// Render
 function render() {
 
   const el = document.getElementById("tickets");
@@ -131,7 +132,7 @@ function render() {
 
   ticketsData.forEach(t => {
 
-    const active = favorites.includes(t.id) ? "active" : "";
+    const active = favorites.includes(Number(t.id)) ? "active" : "";
 
     el.innerHTML += `
       <div class="card">
