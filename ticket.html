@@ -2,65 +2,131 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ticket</title>
+<title>Ticket Details</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
 <style>
 body {
+  margin:0;
+  font-family:sans-serif;
   background:#0b1220;
   color:white;
+}
+
+.container {
   padding:20px;
 }
+
 img {
   width:100%;
-  border-radius:10px;
+  border-radius:15px;
+  margin-bottom:15px;
 }
+
 .button {
-  margin-top:20px;
   padding:15px;
-  background:#16a34a;
-  text-align:center;
+  width:100%;
+  border:none;
+  border-radius:10px;
+  background:#22c55e;
+  color:white;
+  font-size:18px;
+  cursor:pointer;
+}
+
+.back {
+  margin-bottom:15px;
+  display:inline-block;
+  color:#60a5fa;
 }
 </style>
 </head>
 
 <body>
 
-<a href="index.html">← Zurück</a>
+<div class="container">
+
+<a href="index.html" class="back">⬅ Zurück</a>
 
 <div id="content"></div>
 
+</div>
+
 <script>
+
+// ================= SUPABASE =================
 
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "DEIN_KEY_HIER"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-const id = new URLSearchParams(window.location.search).get("id");
+// ================= PARAMETER =================
 
-async function load() {
-  const { data } = await db.from("tickets").select("*").eq("id", id).single();
+const params = new URLSearchParams(window.location.search);
+const ticketId = params.get("id");
+
+// ================= LOAD =================
+
+async function loadTicket() {
+
+  const { data } = await db
+    .from("tickets")
+    .select("*")
+    .eq("id", ticketId)
+    .single();
+
+  if (!data) {
+    document.getElementById("content").innerHTML = "Ticket nicht gefunden";
+    return;
+  }
+
+  render(data);
+}
+
+// ================= RENDER =================
+
+function render(t) {
 
   document.getElementById("content").innerHTML = `
-    ${data.image ? `<img src="${data.image}">` : ""}
-    <h2>${data.title}</h2>
-    <p>${data.description}</p>
-    <b>${data.price} Pi</b>
+    ${t.image ? `<img src="${t.image}">` : ""}
 
-    <div class="button" onclick="buy(${data.id})">💰 Kaufen</div>
+    <h2>${t.title}</h2>
+    <p><b>Kategorie:</b> ${t.category}</p>
+    <p>${t.description}</p>
+
+    <h3>${t.price} Pi</h3>
+
+    <br>
+
+    <button class="button" onclick="buyTicket(${t.price})">
+      💸 Ticket kaufen
+    </button>
   `;
 }
 
-function buy(id) {
-  let p = JSON.parse(localStorage.getItem("purchases")||"[]");
-  if(!p.includes(id)) p.push(id);
-  localStorage.setItem("purchases", JSON.stringify(p));
-  alert("Gekauft!");
+// ================= PAYMENT (PREP) =================
+
+async function buyTicket(price) {
+
+  const user = localStorage.getItem("pi_user");
+
+  if (!user) {
+    alert("Bitte erst einloggen");
+    return;
+  }
+
+  alert("Payment wird vorbereitet: " + price + " Pi");
+
+  // HIER kommt später:
+  // Pi.createPayment(...)
 }
 
-load();
+// ================= INIT =================
+
+loadTicket();
 
 </script>
 
