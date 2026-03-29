@@ -50,6 +50,7 @@ body {
   width:100%;
   height:220px;
   object-fit:cover;
+  pointer-events:none; /* 🔥 verhindert Blockieren */
 }
 
 .card-content {
@@ -58,7 +59,9 @@ body {
 
 .like {
   cursor:pointer;
-  font-size:22px;
+  font-size:24px;
+  display:inline-block;
+  margin-top:10px;
 }
 
 .liked {
@@ -116,10 +119,15 @@ function toggleFavorite(id) {
 
 async function loadTickets() {
 
-  const { data } = await db
+  const { data, error } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (error) {
+    document.getElementById("tickets").innerText = error.message;
+    return;
+  }
 
   allTickets = data;
 
@@ -140,7 +148,7 @@ async function loadTickets() {
         <p>${t.category}</p>
         <p>${t.description}</p>
         <strong>${t.price} Pi</strong>
-        <br><br>
+        <br>
         <span class="like ${liked}" data-id="${t.id}">❤️</span>
       </div>
     `;
@@ -149,9 +157,10 @@ async function loadTickets() {
 
   });
 
-  // 🔥 EVENT LISTENER NACH DEM RENDERN
+  // 🔥 EVENT LISTENER (funktioniert jetzt sicher)
   document.querySelectorAll(".like").forEach(el => {
-    el.addEventListener("click", () => {
+    el.addEventListener("click", (e) => {
+      e.stopPropagation();
       const id = el.getAttribute("data-id");
       toggleFavorite(id);
     });
