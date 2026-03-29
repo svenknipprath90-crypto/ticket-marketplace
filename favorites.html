@@ -47,10 +47,11 @@ const db = window.supabase.createClient(
 );
 
 function goBack() {
-  window.location.href = "/";
+  window.location.href = "index.html";
 }
 
 async function loadFavorites() {
+
   const user = localStorage.getItem("pi_user");
 
   if (!user) {
@@ -58,41 +59,38 @@ async function loadFavorites() {
     return;
   }
 
-  const { data: favs, error } = await db
+  const { data: favs } = await db
     .from("favorites")
-    .select("ticket_id")
+    .select("*")
     .eq("user_id", user);
-
-  if (error) {
-    document.getElementById("list").innerText = "Fehler beim Laden";
-    return;
-  }
 
   if (!favs || favs.length === 0) {
     document.getElementById("list").innerText = "Keine Favoriten";
     return;
   }
 
-  const ids = favs.map(f => f.ticket_id);
-
-  const { data: tickets } = await db
-    .from("tickets")
-    .select("*")
-    .in("id", ids);
-
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  tickets.forEach(t => {
+  for (let f of favs) {
+
+    const { data: ticket } = await db
+      .from("tickets")
+      .select("*")
+      .eq("id", f.ticket_id)
+      .single();
+
+    if (!ticket) continue;
+
     list.innerHTML += `
       <div class="card">
-        <h3>${t.title}</h3>
-        <p>${t.category}</p>
-        <p>${t.description}</p>
-        <b>${t.price} Pi</b>
+        <h3>${ticket.title}</h3>
+        <p>${ticket.category}</p>
+        <p>${ticket.description}</p>
+        <b>${ticket.price} Pi</b>
       </div>
     `;
-  });
+  }
 }
 
 loadFavorites();
