@@ -52,18 +52,22 @@ img {
 
 <script>
 
-// PI INIT
-Pi.init({ version: "2.0", sandbox: true });
+// ================= PI INIT =================
+// 🔥 MAINNET (WICHTIG!)
+Pi.init({ version: "2.0", sandbox: false });
 
-// LOGIN
+// ================= LOGIN =================
 let currentUser = null;
 
 async function login() {
   try {
     const auth = await Pi.authenticate(["payments", "username"]);
+
     currentUser = auth.user.username;
     localStorage.setItem("pi_user", currentUser);
+
     console.log("User:", currentUser);
+
   } catch (err) {
     alert("Login Fehler: " + err);
   }
@@ -73,13 +77,15 @@ window.onload = () => {
   login();
 };
 
-// SUPABASE (FIXED)
+
+// ================= SUPABASE =================
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// LOAD TICKET
+
+// ================= LOAD TICKET =================
 const params = new URLSearchParams(window.location.search);
 const ticketId = params.get("id");
 
@@ -91,8 +97,7 @@ async function loadTicket() {
     .eq("id", ticketId)
     .single();
 
-  if (error) {
-    console.error(error);
+  if (error || !data) {
     document.getElementById("content").innerHTML = "Fehler beim Laden";
     return;
   }
@@ -100,7 +105,8 @@ async function loadTicket() {
   render(data);
 }
 
-// UI
+
+// ================= UI =================
 function render(t) {
 
   const fee = (t.price * 0.1).toFixed(2);
@@ -118,7 +124,8 @@ function render(t) {
   `;
 }
 
-// PAYMENT (FIXED)
+
+// ================= PAYMENT =================
 async function buy(amount) {
 
   if (!currentUser) {
@@ -133,6 +140,7 @@ async function buy(amount) {
       metadata: { ticketId: ticketId }
     }, {
 
+      // 🔥 APPROVE (Backend)
       onReadyForServerApproval: async (paymentId) => {
         await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
           method: "POST",
@@ -146,6 +154,7 @@ async function buy(amount) {
         });
       },
 
+      // 🔥 COMPLETE (Backend)
       onReadyForServerCompletion: async (paymentId, txid) => {
         await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
           method: "POST",
@@ -177,7 +186,8 @@ async function buy(amount) {
   }
 }
 
-// START
+
+// ================= START =================
 loadTicket();
 
 </script>
