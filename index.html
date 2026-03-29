@@ -59,7 +59,6 @@ body {
 .like {
   cursor:pointer;
   font-size:24px;
-  display:inline-block;
 }
 
 .liked {
@@ -82,9 +81,10 @@ body {
 
 <script>
 
+// ✅ DEIN ORIGINALER, KORREKTER KEY
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI":"ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
@@ -100,8 +100,6 @@ function isFavorite(id) {
 
 function toggleFavorite(id) {
 
-  console.log("CLICKED:", id); // 🔥 DEBUG
-
   id = Number(id);
 
   if (isFavorite(id)) {
@@ -116,7 +114,15 @@ function toggleFavorite(id) {
 
 async function loadTickets() {
 
-  const { data } = await db.from("tickets").select("*");
+  const { data, error } = await db
+    .from("tickets")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    document.getElementById("tickets").innerText = error.message;
+    return;
+  }
 
   const el = document.getElementById("tickets");
   el.innerHTML = "";
@@ -134,9 +140,7 @@ async function loadTickets() {
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
           <br><br>
-          <span class="like ${liked}" onclick="toggleFavorite(${t.id})">
-            ❤️
-          </span>
+          <span class="like ${liked}" onclick="toggleFavorite(${t.id})">❤️</span>
         </div>
       </div>
     `;
