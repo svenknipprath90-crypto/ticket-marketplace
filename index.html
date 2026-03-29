@@ -74,6 +74,7 @@ body {
 <div class="top-buttons">
   <a href="create.html" class="button">➕ Ticket erstellen</a>
   <a href="favorites.html" class="button">❤️ Favoriten</a>
+  <a href="login.html" class="button">👤 Login</a>
 </div>
 
 <div id="tickets"></div>
@@ -98,28 +99,32 @@ function isFavorite(id) {
 function toggleFavorite(id) {
 
   let favs = getFavorites();
-
-  const ticket = allTickets.find(t => t.id === id);
+  const ticket = allTickets.find(t => t.id == id);
 
   if (!ticket) return;
 
   if (isFavorite(id)) {
-    favs = favs.filter(t => t.id !== id);
+    favs = favs.filter(t => t.id != id);
   } else {
     favs.push(ticket);
   }
 
   localStorage.setItem("favorites", JSON.stringify(favs));
 
-  loadTickets(); // neu rendern
+  loadTickets(); // 🔥 neu rendern (wichtig!)
 }
 
 async function loadTickets() {
 
-  const { data } = await db
+  const { data, error } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
+
+  if (error) {
+    document.getElementById("tickets").innerText = error.message;
+    return;
+  }
 
   allTickets = data;
 
@@ -128,7 +133,7 @@ async function loadTickets() {
 
   data.forEach(t => {
 
-    const likedClass = isFavorite(t.id) ? "liked" : "";
+    const liked = isFavorite(t.id) ? "liked" : "";
 
     el.innerHTML += `
       <div class="card">
@@ -139,7 +144,7 @@ async function loadTickets() {
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
           <br><br>
-          <span class="like ${likedClass}" onclick="toggleFavorite('${t.id}')">
+          <span class="like ${liked}" onclick="toggleFavorite('${t.id}')">
             ❤️
           </span>
         </div>
