@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Pi Ticket Marketplace</title>
+<title>Favoriten</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
@@ -15,97 +15,40 @@ body {
   color:white;
 }
 
-.header {
+.container {
   padding:20px;
-  font-size:22px;
-  font-weight:bold;
-}
-
-.top-buttons {
-  padding:15px;
-}
-
-.button {
-  display:inline-block;
-  margin-right:10px;
-  padding:12px 18px;
-  background:#2563eb;
-  color:white;
-  border-radius:10px;
-  text-decoration:none;
-  font-weight:bold;
-}
-
-#loginBtn {
-  background:#16a34a;
-}
-
-#user {
-  margin-left:10px;
-  font-weight:bold;
-}
-
-#tickets {
-  padding:15px;
 }
 
 .card {
   background:#1e293b;
   border-radius:15px;
   margin-bottom:20px;
-  overflow:hidden;
-}
-
-.card img {
-  width:100%;
-  height:220px;
-  object-fit:cover;
-}
-
-.content {
   padding:15px;
 }
 
-.heart {
-  font-size:28px;
-  cursor:pointer;
+.button {
+  display:block;
+  margin-top:20px;
+  padding:12px;
+  background:#374151;
+  text-align:center;
+  border-radius:10px;
+  text-decoration:none;
+  color:white;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  Pi Ticket Marketplace
-  <span id="user"></span>
-</div>
+<div class="container">
+  <h1>❤️ Favoriten</h1>
+  <div id="list">Lade...</div>
 
-<div class="top-buttons">
-  <button id="loginBtn" class="button">🔐 Login mit Pi</button>
-  <a href="create.html" class="button">➕ Ticket erstellen</a>
-  <a href="favorites.html" class="button">❤️ Favoriten</a>
+  <a href="index.html" class="button">⬅ Zurück</a>
 </div>
-
-<div id="tickets"></div>
 
 <script>
-
-// LOGIN
-let currentUser = null;
-
-async function loginPi() {
-  try {
-    await Pi.init({ version: "2.0" });
-    const auth = await Pi.authenticate(['username'], () => {});
-    currentUser = auth.user;
-    document.getElementById("user").innerText = "👤 " + auth.user.username;
-  } catch (e) {
-    alert("Pi Login nur im Pi Browser möglich");
-  }
-}
-
-document.getElementById("loginBtn").onclick = loginPi;
-
 
 // SUPABASE
 const db = window.supabase.createClient(
@@ -113,75 +56,68 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
+let currentUser = null;
 
-// FAVORITEN
-let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
-favorites = favorites.map(id => Number(id));
+// INIT
+async function init() {
 
-function saveFavorites() {
-  localStorage.setItem("favorites", JSON.stringify(favorites));
-}
+  try {
+    await Pi.init({ version: "2.0" });
 
-function toggleFavorite(id) {
-  id = Number(id);
+    const auth = await Pi.authenticate(['username'], () => {});
+    currentUser = auth.user;
 
-  if (favorites.includes(id)) {
-    favorites = favorites.filter(f => f !== id);
-  } else {
-    favorites.push(id);
+    loadFavorites();
+
+  } catch (e) {
+    document.getElementById("list").innerText = "Bitte im Pi Browser öffnen";
   }
 
-  saveFavorites();
-  render();
 }
 
+// FAVORITEN LADEN
+async function loadFavorites() {
 
-// TICKETS
-let ticketsData = [];
+  const { data: favs } = await db
+    .from("favorites")
+    .select("*")
+    .eq("user_id", currentUser.username);
 
-async function loadTickets() {
-  const { data } = await db
+  const ids = favs.map(f => f.ticket_id);
+
+  if (ids.length === 0) {
+    document.getElementById("list").innerText = "Keine Favoriten";
+    return;
+  }
+
+  const { data: tickets } = await db
     .from("tickets")
     .select("*")
-    .order("created_at", { ascending: false });
+    .in("id", ids);
 
-  ticketsData = data;
-  render();
+  render(tickets);
 }
 
-
 // RENDER
-function render() {
+function render(tickets) {
 
-  const el = document.getElementById("tickets");
+  const el = document.getElementById("list");
   el.innerHTML = "";
 
-  ticketsData.forEach(t => {
-
-    const isFav = favorites.includes(Number(t.id));
-
+  tickets.forEach(t => {
     el.innerHTML += `
       <div class="card">
-        ${t.image ? `<img src="${t.image}">` : ""}
-        <div class="content">
-          <h3>${t.title}</h3>
-          <p>${t.category}</p>
-          <p>${t.description}</p>
-          <strong>${t.price} Pi</strong>
-          <br><br>
-
-          <span class="heart" onclick="toggleFavorite(${t.id})">
-            ${isFav ? "❤️" : "🤍"}
-          </span>
-
-        </div>
+        <h3>${t.title}</h3>
+        <p>${t.category}</p>
+        <p>${t.description}</p>
+        <strong>${t.price} Pi</strong>
       </div>
     `;
   });
 
 }
 
-loadTickets();
+init();
 
 </script>
 
