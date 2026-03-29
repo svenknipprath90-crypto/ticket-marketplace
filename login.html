@@ -13,23 +13,16 @@ body {
   font-family:sans-serif;
   padding:20px;
 }
-
 input {
   width:100%;
-  padding:12px;
+  padding:10px;
   margin-bottom:10px;
-  border-radius:8px;
-  border:none;
 }
-
 button {
   width:100%;
-  padding:12px;
+  padding:10px;
   background:#2563eb;
   color:white;
-  border:none;
-  border-radius:8px;
-  font-weight:bold;
 }
 </style>
 </head>
@@ -38,10 +31,10 @@ button {
 
 <h2>Login / Registrierung</h2>
 
-<input type="email" id="email" placeholder="Email">
-<input type="password" id="password" placeholder="Passwort">
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Passwort">
 
-<button onclick="login()">Login / Register</button>
+<button onclick="login()">Login</button>
 
 <br><br>
 <a href="index.html">← Zurück</a>
@@ -50,7 +43,7 @@ button {
 
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
 async function login() {
@@ -58,23 +51,11 @@ async function login() {
   const email = document.getElementById("email").value;
   const password = document.getElementById("password").value;
 
-  const { data, error } = await db.auth.signInWithPassword({
-    email,
-    password
-  });
+  let { error } = await db.auth.signInWithPassword({ email, password });
 
   if (error) {
-    // wenn user nicht existiert → registrieren
-    const { data, error } = await db.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    let res = await db.auth.signUp({ email, password });
+    if (res.error) return alert(res.error.message);
     alert("Account erstellt!");
   } else {
     alert("Eingeloggt!");
