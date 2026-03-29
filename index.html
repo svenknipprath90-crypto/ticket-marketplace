@@ -93,7 +93,7 @@ function getFavorites() {
 }
 
 function isFavorite(id) {
-  return getFavorites().some(t => t.id === id);
+  return getFavorites().some(t => t.id == id);
 }
 
 function toggleFavorite(id) {
@@ -111,20 +111,15 @@ function toggleFavorite(id) {
 
   localStorage.setItem("favorites", JSON.stringify(favs));
 
-  loadTickets(); // 🔥 neu rendern (wichtig!)
+  loadTickets();
 }
 
 async function loadTickets() {
 
-  const { data, error } = await db
+  const { data } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
-
-  if (error) {
-    document.getElementById("tickets").innerText = error.message;
-    return;
-  }
 
   allTickets = data;
 
@@ -135,21 +130,31 @@ async function loadTickets() {
 
     const liked = isFavorite(t.id) ? "liked" : "";
 
-    el.innerHTML += `
-      <div class="card">
-        ${t.image ? `<img src="${t.image}">` : ""}
-        <div class="card-content">
-          <h3>${t.title}</h3>
-          <p>${t.category}</p>
-          <p>${t.description}</p>
-          <strong>${t.price} Pi</strong>
-          <br><br>
-          <span class="like ${liked}" onclick="toggleFavorite('${t.id}')">
-            ❤️
-          </span>
-        </div>
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      ${t.image ? `<img src="${t.image}">` : ""}
+      <div class="card-content">
+        <h3>${t.title}</h3>
+        <p>${t.category}</p>
+        <p>${t.description}</p>
+        <strong>${t.price} Pi</strong>
+        <br><br>
+        <span class="like ${liked}" data-id="${t.id}">❤️</span>
       </div>
     `;
+
+    el.appendChild(card);
+
+  });
+
+  // 🔥 EVENT LISTENER NACH DEM RENDERN
+  document.querySelectorAll(".like").forEach(el => {
+    el.addEventListener("click", () => {
+      const id = el.getAttribute("data-id");
+      toggleFavorite(id);
+    });
   });
 
 }
