@@ -8,56 +8,26 @@
 
 <style>
 body {
-  margin:0;
-  font-family:sans-serif;
   background:#0b1220;
   color:white;
   padding:20px;
 }
-
 img {
   width:100%;
-  border-radius:15px;
-  margin-bottom:20px;
+  border-radius:10px;
 }
-
-.title {
-  font-size:22px;
-  font-weight:bold;
-}
-
-.price {
-  font-size:20px;
-  margin-top:10px;
-}
-
-.desc {
-  margin-top:15px;
-  color:#9ca3af;
-}
-
 .button {
-  display:block;
   margin-top:20px;
   padding:15px;
-  text-align:center;
   background:#16a34a;
-  border-radius:10px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.back {
-  display:inline-block;
-  margin-bottom:20px;
-  color:#60a5fa;
+  text-align:center;
 }
 </style>
 </head>
 
 <body>
 
-<a href="index.html" class="back">← Zurück</a>
+<a href="index.html">← Zurück</a>
 
 <div id="content"></div>
 
@@ -65,49 +35,32 @@ img {
 
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "DEIN_KEY_HIER"
 );
 
-const params = new URLSearchParams(window.location.search);
-const id = params.get("id");
+const id = new URLSearchParams(window.location.search).get("id");
 
-async function loadTicket() {
+async function load() {
+  const { data } = await db.from("tickets").select("*").eq("id", id).single();
 
-  const { data } = await db
-    .from("tickets")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  const container = document.getElementById("content");
-
-  container.innerHTML = `
+  document.getElementById("content").innerHTML = `
     ${data.image ? `<img src="${data.image}">` : ""}
-    <div class="title">${data.title}</div>
-    <div class="price">${data.price} Pi</div>
-    <div class="desc">${data.description}</div>
+    <h2>${data.title}</h2>
+    <p>${data.description}</p>
+    <b>${data.price} Pi</b>
 
-    <div class="button" onclick="buyTicket(${data.id})">
-      💰 Kaufen
-    </div>
+    <div class="button" onclick="buy(${data.id})">💰 Kaufen</div>
   `;
 }
 
-// KAUF FUNKTION
-function buyTicket(id) {
-
-  let purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
-
-  if (!purchases.includes(id)) {
-    purchases.push(id);
-  }
-
-  localStorage.setItem("purchases", JSON.stringify(purchases));
-
-  alert("✅ Ticket gekauft!");
+function buy(id) {
+  let p = JSON.parse(localStorage.getItem("purchases")||"[]");
+  if(!p.includes(id)) p.push(id);
+  localStorage.setItem("purchases", JSON.stringify(p));
+  alert("Gekauft!");
 }
 
-loadTicket();
+load();
 
 </script>
 
