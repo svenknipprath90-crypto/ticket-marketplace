@@ -58,7 +58,11 @@ body {
 
 .like {
   cursor:pointer;
-  font-size:20px;
+  font-size:22px;
+}
+
+.liked {
+  color:red;
 }
 </style>
 </head>
@@ -73,7 +77,7 @@ body {
   <a href="login.html" class="button">👤 Login</a>
 </div>
 
-<div id="tickets">Lade Tickets...</div>
+<div id="tickets"></div>
 
 <script>
 
@@ -82,44 +86,41 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-function addToFavorites(ticket) {
-  let favs = JSON.parse(localStorage.getItem("favorites")) || [];
+function getFavorites() {
+  return JSON.parse(localStorage.getItem("favorites")) || [];
+}
 
-  const exists = favs.find(t => t.id === ticket.id);
+function isFavorite(id) {
+  return getFavorites().some(t => t.id === id);
+}
 
-  if (exists) {
+function toggleFavorite(ticket) {
+  let favs = getFavorites();
+
+  if (isFavorite(ticket.id)) {
     favs = favs.filter(t => t.id !== ticket.id);
-    alert("❌ Entfernt aus Favoriten");
   } else {
     favs.push(ticket);
-    alert("❤️ Gespeichert");
   }
 
   localStorage.setItem("favorites", JSON.stringify(favs));
+  loadTickets(); // 🔥 reload damit Farbe aktualisiert wird
 }
 
 async function loadTickets() {
 
-  const { data, error } = await db
+  const { data } = await db
     .from("tickets")
     .select("*")
     .order("created_at", { ascending: false });
 
   const el = document.getElementById("tickets");
-
-  if (error) {
-    el.innerText = "Fehler: " + error.message;
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    el.innerText = "Keine Tickets vorhanden";
-    return;
-  }
-
   el.innerHTML = "";
 
   data.forEach(t => {
+
+    const likedClass = isFavorite(t.id) ? "liked" : "";
+
     el.innerHTML += `
       <div class="card">
         ${t.image ? `<img src="${t.image}">` : ""}
@@ -129,7 +130,9 @@ async function loadTickets() {
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
           <br><br>
-          <span class="like" onclick='addToFavorites(${JSON.stringify(t)})'>❤️ Favorit</span>
+          <span class="like ${likedClass}" onclick='toggleFavorite(${JSON.stringify(t)})'>
+            ❤️
+          </span>
         </div>
       </div>
     `;
