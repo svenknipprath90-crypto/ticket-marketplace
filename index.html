@@ -78,7 +78,10 @@ const db = window.supabase.createClient(
 
 async function loadTickets() {
 
-  const { data, error } = await db.from("tickets").select("*");
+  const { data, error } = await db
+    .from("tickets")
+    .select("*")
+    .order("created_at", { ascending: false });
 
   const el = document.getElementById("tickets");
 
@@ -88,7 +91,7 @@ async function loadTickets() {
   }
 
   if (!data || data.length === 0) {
-    el.innerText = "Keine Tickets";
+    el.innerText = "Keine Tickets vorhanden";
     return;
   }
 
@@ -99,8 +102,10 @@ async function loadTickets() {
       <div class="card">
         ${t.image ? `<img src="${t.image}">` : ""}
         <div class="card-content">
-          <b>${t.title}</b><br>
-          ${t.price} Pi
+          <h3>${t.title}</h3>
+          <p>${t.category}</p>
+          <p>${t.description}</p>
+          <strong>${t.price} Pi</strong>
         </div>
       </div>
     `;
