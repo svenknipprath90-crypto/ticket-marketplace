@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Favoriten</title>
+<title>Pi Ticket Marketplace</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
@@ -15,40 +15,106 @@ body {
   color:white;
 }
 
-.container {
+.header {
   padding:20px;
+  font-size:22px;
+  font-weight:bold;
+}
+
+.top-buttons {
+  padding:15px;
+}
+
+.button {
+  display:inline-block;
+  margin-right:10px;
+  padding:12px 18px;
+  background:#2563eb;
+  color:white;
+  border-radius:10px;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+#loginBtn {
+  background:#16a34a;
+}
+
+#user {
+  margin-left:10px;
+  font-weight:bold;
+}
+
+#tickets {
+  padding:15px;
 }
 
 .card {
   background:#1e293b;
   border-radius:15px;
   margin-bottom:20px;
+  overflow:hidden;
+}
+
+.card img {
+  width:100%;
+  height:220px;
+  object-fit:cover;
+}
+
+.content {
   padding:15px;
 }
 
-.button {
-  display:block;
-  margin-top:20px;
-  padding:12px;
-  background:#374151;
-  text-align:center;
-  border-radius:10px;
-  text-decoration:none;
-  color:white;
+.heart {
+  font-size:28px;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-  <h1>❤️ Favoriten</h1>
-  <div id="list">Lade...</div>
-
-  <a href="index.html" class="button">⬅ Zurück</a>
+<div class="header">
+  Pi Ticket Marketplace
+  <span id="user"></span>
 </div>
 
+<div class="top-buttons">
+  <button id="loginBtn" class="button">🔐 Login mit Pi</button>
+  <a href="create.html" class="button">➕ Ticket erstellen</a>
+  <a href="favorites.html" class="button">❤️ Favoriten</a>
+</div>
+
+<div id="tickets"></div>
+
 <script>
+
+// USER
+let currentUser = null;
+let favorites = [];
+
+// LOGIN
+async function loginPi() {
+  try {
+    await Pi.init({ version: "2.0" });
+
+    const auth = await Pi.authenticate(['username'], () => {});
+    currentUser = auth.user;
+
+    document.getElementById("user").innerText = "👤 " + auth.user.username;
+
+    localStorage.setItem("pi_user", auth.user.username);
+
+    loadFavorites();
+
+  } catch (e) {
+    alert("Pi Login nur im Pi Browser möglich");
+  }
+}
+
+document.getElementById("loginBtn").onclick = loginPi;
+
 
 // SUPABASE
 const db = window.supabase.createClient(
@@ -56,68 +122,106 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-let currentUser = null;
-
-// INIT
-async function init() {
-
-  try {
-    await Pi.init({ version: "2.0" });
-
-    const auth = await Pi.authenticate(['username'], () => {});
-    currentUser = auth.user;
-
-    loadFavorites();
-
-  } catch (e) {
-    document.getElementById("list").innerText = "Bitte im Pi Browser öffnen";
-  }
-
-}
 
 // FAVORITEN LADEN
 async function loadFavorites() {
 
-  const { data: favs } = await db
+  const user = localStorage.getItem("pi_user");
+  if (!user) return;
+
+  const { data } = await db
     .from("favorites")
     .select("*")
-    .eq("user_id", currentUser.username);
+    .eq("user_id", user);
 
-  const ids = favs.map(f => f.ticket_id);
+  if (!data) return;
 
-  if (ids.length === 0) {
-    document.getElementById("list").innerText = "Keine Favoriten";
+  favorites = data.map(f => f.ticket_id);
+  render();
+}
+
+
+// FAVORITEN TOGGLE
+async function toggleFavorite(ticketId) {
+
+  const user = localStorage.getItem("pi_user");
+
+  if (!user) {
+    alert("Bitte erst einloggen!");
     return;
   }
 
-  const { data: tickets } = await db
-    .from("tickets")
-    .select("*")
-    .in("id", ids);
+  const exists = favorites.includes(ticketId);
 
-  render(tickets);
+  if (exists) {
+    await db
+      .from("favorites")
+      .delete()
+      .eq("user_id", user)
+      .eq("ticket_id", ticketId);
+
+  } else {
+    await db
+      .from("favorites")
+      .insert({
+        user_id: user,
+        ticket_id: ticketId
+      });
+  }
+
+  loadFavorites();
 }
 
-// RENDER
-function render(tickets) {
 
-  const el = document.getElementById("list");
+// TICKETS LADEN
+let ticketsData = [];
+
+async function loadTickets() {
+
+  const { data } = await db
+    .from("tickets")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  ticketsData = data;
+  render();
+}
+
+
+// RENDER
+function render() {
+
+  const el = document.getElementById("tickets");
   el.innerHTML = "";
 
-  tickets.forEach(t => {
+  ticketsData.forEach(t => {
+
+    const isFav = favorites.includes(t.id);
+
     el.innerHTML += `
       <div class="card">
-        <h3>${t.title}</h3>
-        <p>${t.category}</p>
-        <p>${t.description}</p>
-        <strong>${t.price} Pi</strong>
+        ${t.image ? `<img src="${t.image}">` : ""}
+        <div class="content">
+          <h3>${t.title}</h3>
+          <p>${t.category}</p>
+          <p>${t.description}</p>
+          <strong>${t.price} Pi</strong>
+          <br><br>
+
+          <span class="heart" onclick="toggleFavorite(${t.id})">
+            ${isFav ? "❤️" : "🤍"}
+          </span>
+
+        </div>
       </div>
     `;
   });
 
 }
 
-init();
+
+// INIT
+loadTickets();
 
 </script>
 
