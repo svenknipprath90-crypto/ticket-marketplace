@@ -4,28 +4,31 @@
 <meta charset="UTF-8">
 <title>Favoriten</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 body {
+  margin:0;
+  font-family:sans-serif;
   background:#0b1220;
   color:white;
-  font-family:sans-serif;
   padding:20px;
 }
 
 .card {
   background:#1e293b;
   border-radius:15px;
-  overflow:hidden;
   margin-bottom:20px;
+  overflow:hidden;
 }
 
 .card img {
   width:100%;
-  height:220px;
+  height:200px;
   object-fit:cover;
 }
 
-.card-content {
+.content {
   padding:15px;
 }
 </style>
@@ -34,31 +37,39 @@ body {
 <body>
 
 <h1>❤️ Favoriten</h1>
-
-<a href="index.html" style="color:#2563eb;">⬅ Zurück</a>
+<a href="index.html">← Zurück</a>
 
 <div id="list"></div>
 
 <script>
 
-function loadFavorites() {
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
 
-  const favs = JSON.parse(localStorage.getItem("favorites")) || [];
+async function loadFavorites() {
 
-  const el = document.getElementById("list");
+  let ids = JSON.parse(localStorage.getItem("favorites")) || [];
 
-  if (favs.length === 0) {
-    el.innerHTML = "Keine Favoriten";
+  if (ids.length === 0) {
+    document.getElementById("list").innerText = "Keine Favoriten";
     return;
   }
 
+  const { data } = await db
+    .from("tickets")
+    .select("*")
+    .in("id", ids);
+
+  const el = document.getElementById("list");
   el.innerHTML = "";
 
-  favs.forEach(t => {
+  data.forEach(t => {
     el.innerHTML += `
       <div class="card">
         ${t.image ? `<img src="${t.image}">` : ""}
-        <div class="card-content">
+        <div class="content">
           <h3>${t.title}</h3>
           <p>${t.category}</p>
           <p>${t.description}</p>
