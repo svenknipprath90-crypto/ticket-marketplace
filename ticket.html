@@ -2,109 +2,80 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ticket Details</title>
+<title>Ticket</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
 <style>
-body {
-  margin:0;
-  font-family:sans-serif;
-  background:#0b1220;
-  color:white;
-}
-
-.container {
-  padding:20px;
-}
-
-img {
-  width:100%;
-  border-radius:15px;
-  margin-bottom:15px;
-}
-
-.button {
-  padding:15px;
-  width:100%;
-  border:none;
-  border-radius:10px;
-  background:#22c55e;
-  color:white;
-  font-size:18px;
-  cursor:pointer;
-}
-
-.back {
-  margin-bottom:15px;
-  display:inline-block;
-  color:#60a5fa;
-}
+body { margin:0; font-family:sans-serif; background:#0b1220; color:white; }
+.container { padding:20px; }
+img { width:100%; border-radius:15px; margin-bottom:15px; }
+.button { padding:15px; width:100%; border:none; border-radius:10px; background:#22c55e; color:white; font-size:18px; }
+.back { color:#60a5fa; display:block; margin-bottom:15px; }
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
 <a href="index.html" class="back">⬅ Zurück</a>
-
 <div id="content">Lade...</div>
-
 </div>
 
 <script>
 
-// ================= PI INIT (FINAL FIX) =================
+// ================= PI INIT =================
+Pi.init({ version: "2.0", sandbox: true });
 
-Pi.init({ 
-  version: "2.0",
-  sandbox: true,
-  scopes: ["payments"]
-});
+// ================= LOGIN MIT PAYMENTS =================
+let currentUser = null;
 
+async function login() {
+  try {
+    const scopes = ["payments", "username"];
 
-// ================= USER =================
+    const auth = await Pi.authenticate(scopes, function(payment) {
+      console.log("Incomplete payment:", payment);
+    });
 
-let currentUser = localStorage.getItem("pi_user");
+    currentUser = auth.user.username;
+    localStorage.setItem("pi_user", currentUser);
+
+    console.log("User:", currentUser);
+
+  } catch (err) {
+    alert("Login Fehler: " + err);
+  }
+}
+
+// 👉 AUTO LOGIN BEIM LADEN
+login();
 
 
 // ================= SUPABASE =================
-
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
 
-// ================= PARAMS =================
-
+// ================= LOAD =================
 const params = new URLSearchParams(window.location.search);
 const ticketId = params.get("id");
 
-
-// ================= LOAD =================
-
 async function loadTicket() {
-
-  const { data, error } = await db
+  const { data } = await db
     .from("tickets")
     .select("*")
     .eq("id", ticketId)
     .single();
 
-  if (error || !data) {
-    document.getElementById("content").innerHTML = "❌ Ticket nicht gefunden";
-    return;
-  }
-
   render(data);
 }
 
 
-// ================= RENDER =================
-
+// ================= UI =================
 function render(t) {
 
   const fee = (t.price * 0.1).toFixed(2);
@@ -112,68 +83,43 @@ function render(t) {
 
   document.getElementById("content").innerHTML = `
     ${t.image ? `<img src="${t.image}">` : ""}
-
     <h2>${t.title}</h2>
-    <p><b>Kategorie:</b> ${t.category}</p>
-    <p>${t.description || ""}</p>
-
+    <p>${t.category}</p>
     <h3>${t.price} Pi</h3>
-    <p>Service Fee: ${fee} Pi</p>
-    <h2>Gesamt: ${total} Pi</h2>
-
-    <br>
-
-    <button class="button" onclick="buyTicket(${total})">
-      💸 Jetzt kaufen
-    </button>
+    <p>Fee: ${fee} Pi</p>
+    <h2>Total: ${total} Pi</h2>
+    <button class="button" onclick="buy(${total})">💸 Kaufen</button>
   `;
 }
 
 
 // ================= PAYMENT =================
-
-async function buyTicket(amount) {
+async function buy(amount) {
 
   if (!currentUser) {
-    alert("❌ Bitte zuerst mit Pi einloggen");
+    alert("Nicht eingeloggt");
     return;
   }
 
   try {
-
     await Pi.createPayment({
       amount: amount,
       memo: "Ticket Kauf",
       metadata: { ticketId: ticketId }
     }, {
-
-      onReadyForServerApproval: (paymentId) => {
-        console.log("Approve:", paymentId);
-      },
-
-      onReadyForServerCompletion: (paymentId, txid) => {
-        console.log("Completed:", txid);
-        alert("✅ Zahlung erfolgreich!");
-      },
-
-      onCancel: () => {
-        alert("❌ Zahlung abgebrochen");
-      },
-
-      onError: (error) => {
-        alert("❌ Fehler: " + error.message);
-      }
-
+      onReadyForServerApproval: (id) => console.log("approve", id),
+      onReadyForServerCompletion: (id, tx) => alert("✅ bezahlt"),
+      onCancel: () => alert("❌ abgebrochen"),
+      onError: (e) => alert("Fehler: " + e.message)
     });
 
   } catch (e) {
-    alert("❌ Payment Fehler: " + e.message);
+    alert(e.message);
   }
 }
 
 
-// ================= INIT =================
-
+// ================= START =================
 loadTicket();
 
 </script>
