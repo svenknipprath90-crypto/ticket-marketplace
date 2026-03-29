@@ -5,6 +5,7 @@
 <title>Pi Ticket Marketplace</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
 <style>
 body {
@@ -35,6 +36,15 @@ body {
   font-weight:bold;
 }
 
+#loginBtn {
+  background:#16a34a;
+}
+
+#user {
+  margin-left:10px;
+  font-weight:bold;
+}
+
 #tickets {
   padding:15px;
 }
@@ -60,7 +70,6 @@ body {
   font-size:26px;
   cursor:pointer;
   color:#666;
-  transition:0.2s;
 }
 
 .heart.active {
@@ -71,17 +80,42 @@ body {
 
 <body>
 
-<div class="header">Pi Ticket Marketplace</div>
+<div class="header">
+  Pi Ticket Marketplace
+  <span id="user"></span>
+</div>
 
 <div class="top-buttons">
+  <button id="loginBtn" class="button">🔐 Login mit Pi</button>
   <a href="create.html" class="button">➕ Ticket erstellen</a>
   <a href="favorites.html" class="button">❤️ Favoriten</a>
-  <a href="login.html" class="button">👤 Login</a>
 </div>
 
 <div id="tickets"></div>
 
 <script>
+
+// 🔥 Pi Login
+let currentUser = null;
+
+async function loginPi() {
+  try {
+    await Pi.init({ version: "2.0" });
+
+    const auth = await Pi.authenticate(['username'], onIncompletePayment);
+
+    currentUser = auth.user;
+    document.getElementById("user").innerText = "👤 " + auth.user.username;
+
+  } catch (e) {
+    alert("Pi Login nur im Pi Browser möglich");
+  }
+}
+
+function onIncompletePayment() {}
+
+document.getElementById("loginBtn").onclick = loginPi;
+
 
 // Supabase
 const db = window.supabase.createClient(
@@ -89,7 +123,7 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// Favoriten laden (WICHTIG: Number!)
+// Favoriten
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 favorites = favorites.map(id => Number(id));
 
@@ -111,7 +145,7 @@ function toggleFavorite(id) {
   render();
 }
 
-// Tickets laden
+// Tickets
 let ticketsData = [];
 
 async function loadTickets() {
@@ -125,7 +159,6 @@ async function loadTickets() {
   render();
 }
 
-// Render (wie deine alte funktionierende App)
 function render() {
 
   const el = document.getElementById("tickets");
