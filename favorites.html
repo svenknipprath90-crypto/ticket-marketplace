@@ -51,6 +51,7 @@ const db = window.supabase.createClient(
 async function loadFavorites() {
 
   let ids = JSON.parse(localStorage.getItem("favorites")) || [];
+  ids = ids.map(id => Number(id));
 
   if (ids.length === 0) {
     document.getElementById("list").innerText = "Keine Favoriten";
