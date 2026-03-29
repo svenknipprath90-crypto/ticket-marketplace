@@ -18,10 +18,6 @@ body {
   font-size:22px;
   font-weight:bold;
 }
-.user {
-  padding:10px 20px;
-  color:#9ca3af;
-}
 .container {
   padding:15px;
 }
@@ -55,12 +51,9 @@ body {
 <body>
 
 <div class="header">Pi Ticket Marketplace</div>
-<div id="user" class="user">Lade User...</div>
 
 <div class="container">
 
-<a href="login.html" class="button">Login</a>
-<button onclick="logout()" class="button">Logout</button>
 <a href="create.html" class="button">➕ Ticket</a>
 <a href="favorites.html" class="button">❤️ Favoriten</a>
 
@@ -74,17 +67,6 @@ const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
-
-async function loadUser() {
-  const { data } = await db.auth.getUser();
-  document.getElementById("user").innerText =
-    data.user ? "👤 " + data.user.email : "Nicht eingeloggt";
-}
-
-async function logout() {
-  await db.auth.signOut();
-  location.reload();
-}
 
 async function loadTickets() {
   const { data, error } = await db.from("tickets").select("*");
@@ -116,7 +98,6 @@ async function loadTickets() {
   });
 }
 
-loadUser();
 loadTickets();
 
 </script>
