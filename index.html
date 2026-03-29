@@ -19,6 +19,9 @@ body {
   padding:20px;
   font-size:22px;
   font-weight:bold;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
 .top-buttons {
@@ -34,15 +37,17 @@ body {
   border-radius:10px;
   text-decoration:none;
   font-weight:bold;
+  border:none;
+  cursor:pointer;
 }
 
 #loginBtn {
   background:#16a34a;
 }
 
-#user {
-  margin-left:10px;
-  font-weight:bold;
+#logoutBtn {
+  background:#dc2626;
+  display:none;
 }
 
 #tickets {
@@ -76,12 +81,13 @@ body {
 <body>
 
 <div class="header">
-  Pi Ticket Marketplace
-  <span id="user"></span>
+  <div>Pi Ticket Marketplace</div>
+  <div id="user"></div>
 </div>
 
 <div class="top-buttons">
   <button id="loginBtn" class="button">🔐 Login mit Pi</button>
+  <button id="logoutBtn" class="button">🚪 Logout</button>
   <a href="create.html" class="button">➕ Ticket erstellen</a>
   <a href="favorites.html" class="button">❤️ Favoriten</a>
 </div>
@@ -90,9 +96,27 @@ body {
 
 <script>
 
-// USER
-let currentUser = null;
+// ================= USER =================
+
+let currentUser = localStorage.getItem("pi_user") || null;
 let favorites = [];
+
+function updateUI() {
+  const userEl = document.getElementById("user");
+  const loginBtn = document.getElementById("loginBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (currentUser) {
+    userEl.innerText = "👤 " + currentUser;
+    loginBtn.style.display = "none";
+    logoutBtn.style.display = "inline-block";
+    loadFavorites();
+  } else {
+    userEl.innerText = "";
+    loginBtn.style.display = "inline-block";
+    logoutBtn.style.display = "none";
+  }
+}
 
 // LOGIN
 async function loginPi() {
@@ -100,39 +124,47 @@ async function loginPi() {
     await Pi.init({ version: "2.0" });
 
     const auth = await Pi.authenticate(['username'], () => {});
-    currentUser = auth.user;
+    currentUser = auth.user.username;
 
-    document.getElementById("user").innerText = "👤 " + auth.user.username;
+    localStorage.setItem("pi_user", currentUser);
 
-    localStorage.setItem("pi_user", auth.user.username);
-
-    loadFavorites();
+    updateUI();
 
   } catch (e) {
-    alert("Pi Login nur im Pi Browser möglich");
+    alert("Login nur im Pi Browser möglich");
   }
 }
 
+// LOGOUT
+function logout() {
+  localStorage.removeItem("pi_user");
+  currentUser = null;
+  favorites = [];
+  updateUI();
+  render();
+}
+
 document.getElementById("loginBtn").onclick = loginPi;
+document.getElementById("logoutBtn").onclick = logout;
 
 
-// SUPABASE
+// ================= SUPABASE =================
+
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
 
-// FAVORITEN LADEN
-async function loadFavorites() {
+// ================= FAVORITEN =================
 
-  const user = localStorage.getItem("pi_user");
-  if (!user) return;
+async function loadFavorites() {
+  if (!currentUser) return;
 
   const { data } = await db
     .from("favorites")
     .select("*")
-    .eq("user_id", user);
+    .eq("user_id", currentUser);
 
   if (!data) return;
 
@@ -140,16 +172,9 @@ async function loadFavorites() {
   render();
 }
 
-
-// FAVORITEN TOGGLE (DEBUG FIX)
 async function toggleFavorite(ticketId) {
 
-  const user = localStorage.getItem("pi_user");
-
-  console.log("USER:", user);
-  console.log("TICKET:", ticketId);
-
-  if (!user) {
+  if (!currentUser) {
     alert("Bitte erst einloggen!");
     return;
   }
@@ -158,31 +183,28 @@ async function toggleFavorite(ticketId) {
 
   if (exists) {
 
-    const { error } = await db
+    await db
       .from("favorites")
       .delete()
-      .eq("user_id", user)
+      .eq("user_id", currentUser)
       .eq("ticket_id", ticketId);
-
-    console.log("DELETE:", error);
 
   } else {
 
-    const { error } = await db
+    await db
       .from("favorites")
       .insert({
-        user_id: user,
+        user_id: currentUser,
         ticket_id: ticketId
       });
-
-    console.log("INSERT:", error);
   }
 
   loadFavorites();
 }
 
 
-// TICKETS LADEN
+// ================= TICKETS =================
+
 let ticketsData = [];
 
 async function loadTickets() {
@@ -192,12 +214,13 @@ async function loadTickets() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  ticketsData = data;
+  ticketsData = data || [];
   render();
 }
 
 
-// RENDER
+// ================= RENDER =================
+
 function render() {
 
   const el = document.getElementById("tickets");
@@ -225,11 +248,12 @@ function render() {
       </div>
     `;
   });
-
 }
 
 
-// INIT
+// ================= INIT =================
+
+updateUI();
 loadTickets();
 
 </script>
