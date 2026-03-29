@@ -72,7 +72,6 @@ async function login() {
   }
 }
 
-// 👉 WICHTIG: erst nach init!
 window.onload = () => {
   login();
 };
@@ -81,6 +80,7 @@ window.onload = () => {
 // ================= SUPABASE =================
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI": "anon",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
@@ -139,18 +139,46 @@ async function buy(amount) {
       memo: "Ticket Kauf",
       metadata: { ticketId: ticketId }
     }, {
-      onReadyForServerApproval: (id) => {
-        console.log("approve", id);
+
+      // 🔥 FIX: BACKEND APPROVE
+      onReadyForServerApproval: async (paymentId) => {
+        await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            action: "approve",
+            paymentId: paymentId
+          })
+        });
       },
-      onReadyForServerCompletion: (id, tx) => {
+
+      // 🔥 FIX: BACKEND COMPLETE
+      onReadyForServerCompletion: async (paymentId, txid) => {
+        await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            action: "complete",
+            paymentId: paymentId,
+            txid: txid
+          })
+        });
+
         alert("✅ Zahlung erfolgreich");
       },
+
       onCancel: () => {
         alert("❌ Zahlung abgebrochen");
       },
+
       onError: (e) => {
         alert("Fehler: " + e.message);
       }
+
     });
 
   } catch (e) {
