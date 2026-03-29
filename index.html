@@ -13,14 +13,17 @@ body {
   background:#0b1220;
   color:white;
 }
+
 .header {
   padding:20px;
   font-size:22px;
   font-weight:bold;
 }
+
 .container {
   padding:15px;
 }
+
 .button {
   display:inline-block;
   margin-bottom:10px;
@@ -31,17 +34,20 @@ body {
   border-radius:10px;
   text-decoration:none;
 }
+
 .card {
   background:#1e293b;
   border-radius:15px;
   overflow:hidden;
   margin-bottom:20px;
 }
+
 .card img {
   width:100%;
   height:220px;
   object-fit:cover;
 }
+
 .card-content {
   padding:15px;
 }
@@ -54,8 +60,9 @@ body {
 
 <div class="container">
 
-<a href="create.html" class="button">➕ Ticket</a>
+<a href="create.html" class="button">➕ Ticket erstellen</a>
 <a href="favorites.html" class="button">❤️ Favoriten</a>
+<a href="login.html" class="button">👤 Login</a>
 
 <div id="tickets">Lade Tickets...</div>
 
@@ -69,6 +76,7 @@ const db = window.supabase.createClient(
 );
 
 async function loadTickets() {
+
   const { data, error } = await db.from("tickets").select("*");
 
   const el = document.getElementById("tickets");
@@ -96,6 +104,7 @@ async function loadTickets() {
       </div>
     `;
   });
+
 }
 
 loadTickets();
