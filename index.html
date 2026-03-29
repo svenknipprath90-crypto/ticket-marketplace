@@ -66,14 +66,16 @@ body {
   padding:15px;
 }
 
+/* 🔥 HERZEN */
 .heart {
-  font-size:26px;
+  font-size:28px;
   cursor:pointer;
-  color:#666;
+  color:#555; /* grau */
+  transition:0.2s;
 }
 
 .heart.active {
-  color:#ff3b3b;
+  color:#ff3b3b; /* rot */
 }
 </style>
 </head>
@@ -88,21 +90,21 @@ body {
 <div class="top-buttons">
   <button id="loginBtn" class="button">🔐 Login mit Pi</button>
   <a href="create.html" class="button">➕ Ticket erstellen</a>
-  <a href="favorites.html" class="button">♥ Favoriten</a>
+  <a href="favorites.html" class="button">❤️ Favoriten</a>
 </div>
 
 <div id="tickets"></div>
 
 <script>
 
-// 🔥 Pi Login
+// 🔐 PI LOGIN
 let currentUser = null;
 
 async function loginPi() {
   try {
     await Pi.init({ version: "2.0" });
 
-    const auth = await Pi.authenticate(['username'], onIncompletePayment);
+    const auth = await Pi.authenticate(['username'], () => {});
 
     currentUser = auth.user;
     document.getElementById("user").innerText = "👤 " + auth.user.username;
@@ -112,18 +114,17 @@ async function loginPi() {
   }
 }
 
-function onIncompletePayment() {}
-
 document.getElementById("loginBtn").onclick = loginPi;
 
 
-// Supabase
+// 🔗 SUPABASE
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// Favoriten
+
+// ❤️ FAVORITEN
 let favorites = JSON.parse(localStorage.getItem("favorites")) || [];
 favorites = favorites.map(id => Number(id));
 
@@ -145,7 +146,8 @@ function toggleFavorite(id) {
   render();
 }
 
-// Tickets
+
+// 🎫 TICKETS
 let ticketsData = [];
 
 async function loadTickets() {
@@ -159,6 +161,8 @@ async function loadTickets() {
   render();
 }
 
+
+// 🖼️ RENDER
 function render() {
 
   const el = document.getElementById("tickets");
