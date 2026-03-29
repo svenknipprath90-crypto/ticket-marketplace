@@ -50,21 +50,25 @@ img {
 
 <a href="index.html" class="back">⬅ Zurück</a>
 
-<div id="content"></div>
+<div id="content">Lade...</div>
 
 </div>
 
 <script>
 
-// ================= PI INIT (FIXED) =================
+// ================= PI INIT (FINAL FIX) =================
 
-// ❗ KEIN await!
-Pi.init({ version: "2.0", sandbox: true });
+Pi.init({ 
+  version: "2.0",
+  sandbox: true,
+  scopes: ["payments"]
+});
 
 
 // ================= USER =================
 
 let currentUser = localStorage.getItem("pi_user");
+
 
 // ================= SUPABASE =================
 
@@ -84,14 +88,14 @@ const ticketId = params.get("id");
 
 async function loadTicket() {
 
-  const { data } = await db
+  const { data, error } = await db
     .from("tickets")
     .select("*")
     .eq("id", ticketId)
     .single();
 
-  if (!data) {
-    document.getElementById("content").innerHTML = "Ticket nicht gefunden";
+  if (error || !data) {
+    document.getElementById("content").innerHTML = "❌ Ticket nicht gefunden";
     return;
   }
 
@@ -111,7 +115,7 @@ function render(t) {
 
     <h2>${t.title}</h2>
     <p><b>Kategorie:</b> ${t.category}</p>
-    <p>${t.description}</p>
+    <p>${t.description || ""}</p>
 
     <h3>${t.price} Pi</h3>
     <p>Service Fee: ${fee} Pi</p>
@@ -131,13 +135,13 @@ function render(t) {
 async function buyTicket(amount) {
 
   if (!currentUser) {
-    alert("Bitte erst einloggen");
+    alert("❌ Bitte zuerst mit Pi einloggen");
     return;
   }
 
   try {
 
-    const payment = await Pi.createPayment({
+    await Pi.createPayment({
       amount: amount,
       memo: "Ticket Kauf",
       metadata: { ticketId: ticketId }
@@ -157,7 +161,7 @@ async function buyTicket(amount) {
       },
 
       onError: (error) => {
-        alert("Fehler: " + error.message);
+        alert("❌ Fehler: " + error.message);
       }
 
     });
