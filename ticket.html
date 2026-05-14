@@ -139,6 +139,9 @@ async function buy(amount) {
   }
 
   try {
+    // Authenticate current session for payments scope before creating payment
+    await Pi.authenticate(["payments", "username"], onIncompletePaymentFound);
+
     await Pi.createPayment({
       amount: amount,
       memo: "Ticket Kauf",
