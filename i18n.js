@@ -39,7 +39,11 @@ const translations = {
     send: "Senden",
     rateSeller: "Verkäufer bewerten",
     submitRating: "Bewertung abgeben",
-    orderDetails: "Bestelldetails"
+    orderDetails: "Bestelldetails",
+    purchasesDesc: "Hier siehst du alle deine bezahlten Bestellungen. Klicke auf 'Bestelldetails & Chat', um die Versandadresse einzugeben oder mit dem Verkäufer zu schreiben.",
+    salesDesc: "Hier siehst du alle Tickets, die du erstellt hast, sowie deren Restbestand.",
+    favDesc: "Hier siehst du alle Tickets, die du als Favorit gespeichert hast.",
+    noFavsHere: "Du hast noch keine Favoriten gespeichert."
   },
   en: {
     title: "🎟️ Pi Ticket Marketplace",
@@ -81,7 +85,11 @@ const translations = {
     send: "Send",
     rateSeller: "Rate Seller",
     submitRating: "Submit Rating",
-    orderDetails: "Order Details"
+    orderDetails: "Order Details",
+    purchasesDesc: "Here you can see all your paid orders. Click on 'Order Details & Chat' to enter your shipping address or write to the seller.",
+    salesDesc: "Here you can see all tickets you have created and their remaining stock.",
+    favDesc: "Here you can see all tickets you have saved as favorites.",
+    noFavsHere: "You haven't saved any favorites yet."
   }
 };
 

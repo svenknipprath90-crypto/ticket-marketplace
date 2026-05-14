@@ -85,59 +85,74 @@
   );
 
   document.getElementById("createBtn").onclick = async function () {
-    const title = document.getElementById("title").value;
-    const category = document.getElementById("category").value;
-    const location = document.getElementById("location").value;
-    const price = document.getElementById("price").value;
-    const quantity = document.getElementById("quantity").value || 1;
-    const description = document.getElementById("description").value;
-    const file = document.getElementById("image").files[0];
+    try {
+      const title = document.getElementById("title").value.trim();
+      const category = document.getElementById("category").value;
+      const location = document.getElementById("location").value.trim();
+      let priceStr = document.getElementById("price").value;
+      const quantity = document.getElementById("quantity").value || 1;
+      const description = document.getElementById("description").value.trim();
+      const file = document.getElementById("image").files[0];
 
-    if(!title || !price) {
-      alert("Titel und Preis sind erforderlich!");
-      return;
-    }
-
-    let imageUrl = "";
-
-    document.getElementById("createBtn").innerText = "Lade hoch... / Uploading...";
-    document.getElementById("createBtn").disabled = true;
-
-    if (file) {
-      const fileName = Date.now() + "_" + file.name;
-      const { error: uploadError } = await supabase.storage.from("tickets").upload(fileName, file);
-
-      if (uploadError) {
-        alert(t("uploadError") + ": " + uploadError.message);
-        document.getElementById("createBtn").innerText = t("saveBtn");
-        document.getElementById("createBtn").disabled = false;
+      if(!title || !priceStr) {
+        alert("Titel und Preis sind erforderlich!");
         return;
       }
-      imageUrl = `https://rucejmhjgfvlntoxhczm.supabase.co/storage/v1/object/public/tickets/${fileName}`;
-    }
 
-    const currentUser = localStorage.getItem("pi_user") || "Unknown";
-
-    const { error } = await supabase.from("tickets").insert([
-      {
-        title: title,
-        category: category,
-        location: location,
-        price: Number(price),
-        quantity: Number(quantity),
-        description: description,
-        image: imageUrl,
-        seller: currentUser
+      // Handle comma in price
+      priceStr = priceStr.replace(',', '.');
+      const parsedPrice = Number(priceStr);
+      if (isNaN(parsedPrice)) {
+        alert("Bitte einen gültigen Preis eingeben (z.B. 10.50)");
+        return;
       }
-    ]);
 
-    if (error) {
-      alert(t("dbError") + ": " + error.message);
+      document.getElementById("createBtn").innerText = "Lade hoch... / Uploading...";
+      document.getElementById("createBtn").disabled = true;
+
+      let imageUrl = "";
+
+      if (file) {
+        const fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.\-_]/g, ''); // sanitize filename
+        const { data, error: uploadError } = await supabase.storage.from("tickets").upload(fileName, file);
+
+        if (uploadError) {
+          alert(t("uploadError") + ": " + (uploadError.message || "Unbekannter Fehler"));
+          document.getElementById("createBtn").innerText = t("saveBtn");
+          document.getElementById("createBtn").disabled = false;
+          return;
+        }
+        imageUrl = `https://rucejmhjgfvlntoxhczm.supabase.co/storage/v1/object/public/tickets/${fileName}`;
+      }
+
+      const currentUser = localStorage.getItem("pi_user") || "Unknown";
+
+      const { error } = await supabase.from("tickets").insert([
+        {
+          title: title,
+          category: category,
+          location: location,
+          price: parsedPrice,
+          quantity: Number(quantity),
+          description: description,
+          image: imageUrl,
+          seller: currentUser
+        }
+      ]);
+
+      if (error) {
+        alert(t("dbError") + ": " + (error.message || JSON.stringify(error)));
+        document.getElementById("createBtn").innerText = t("saveBtn");
+        document.getElementById("createBtn").disabled = false;
+      } else {
+        alert("Ticket erfolgreich erstellt!");
+        window.location.href = "index.html";
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Ein unerwarteter Fehler ist aufgetreten: " + err.message);
       document.getElementById("createBtn").innerText = t("saveBtn");
       document.getElementById("createBtn").disabled = false;
-    } else {
-      alert("Ticket erfolgreich erstellt!");
-      window.location.href = "index.html";
     }
   };
 </script>
