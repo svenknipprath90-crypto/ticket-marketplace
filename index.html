@@ -72,30 +72,27 @@
   </div>
 
   <!-- FILTER -->
-  <div class="filter-bar" style="flex-wrap: wrap; gap: 10px;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <strong data-i18n="category">Kategorie:</strong>
-      <select id="categoryFilter" class="category-select" onchange="filterTickets()">
-        <option value="all">Alle Kategorien</option>
-        <option value="Fußball">Fußball</option>
-        <option value="Basketball">Basketball</option>
-        <option value="American Football">American Football</option>
-        <option value="Handball">Handball</option>
-        <option value="Rugby">Rugby</option>
-        <option value="Eishockey">Eishockey</option>
-        <option value="Tennis">Tennis</option>
-        <option value="Schwimmen">Schwimmen</option>
-        <option value="Wintersport">Wintersport</option>
-        <option value="Motorsport">Motorsport</option>
-        <option value="Olympia/Turnier">Olympia / Großturnier</option>
-        <option value="Konzert">Konzert</option>
-        <option value="Musical">Musical</option>
-        <option value="Theater/Comedy">Theater / Comedy</option>
-        <option value="Sonstiges">Sonstiges</option>
-      </select>
-    </div>
+  <div class="filter-bar" style="margin-bottom: 20px;">
+    <input type="text" id="searchInput" data-i18n="searchPlaceholder" placeholder="Suche..." onkeyup="filterTickets()" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
     
-    <input type="text" id="searchInput" data-i18n="searchPlaceholder" placeholder="Suche..." onkeyup="filterTickets()" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; flex-grow: 1; max-width: 300px;">
+    <div class="category-bubbles" id="categoryBubbles">
+      <button class="bubble active" onclick="setCategory('all')">Alles</button>
+      <button class="bubble" onclick="setCategory('Fußball')">⚽️ Fußball</button>
+      <button class="bubble" onclick="setCategory('Basketball')">🏀 Basketball</button>
+      <button class="bubble" onclick="setCategory('American Football')">🏈 Football</button>
+      <button class="bubble" onclick="setCategory('Konzert')">🎸 Konzert</button>
+      <button class="bubble" onclick="setCategory('Handball')">🤾‍♂️ Handball</button>
+      <button class="bubble" onclick="setCategory('Eishockey')">🏒 Eishockey</button>
+      <button class="bubble" onclick="setCategory('Tennis')">🎾 Tennis</button>
+      <button class="bubble" onclick="setCategory('Motorsport')">🏎️ Motorsport</button>
+      <button class="bubble" onclick="setCategory('Wintersport')">⛷️ Wintersport</button>
+      <button class="bubble" onclick="setCategory('Schwimmen')">🏊‍♂️ Schwimmen</button>
+      <button class="bubble" onclick="setCategory('Rugby')">🏉 Rugby</button>
+      <button class="bubble" onclick="setCategory('Musical')">🎭 Musical</button>
+      <button class="bubble" onclick="setCategory('Theater/Comedy')">🎬 Theater</button>
+      <button class="bubble" onclick="setCategory('Olympia/Turnier')">🏆 Turnier</button>
+      <button class="bubble" onclick="setCategory('Sonstiges')">🎫 Sonstiges</button>
+    </div>
   </div>
 
   <!-- TICKETS GRID -->
@@ -230,6 +227,19 @@ function filterTickets() {
   render();
 }
 
+let currentCategory = 'all';
+function setCategory(cat) {
+  currentCategory = cat;
+  const bubbles = document.getElementById("categoryBubbles").children;
+  for(let i=0; i<bubbles.length; i++) {
+    bubbles[i].classList.remove("active");
+    if(bubbles[i].getAttribute("onclick").includes(`'${cat}'`)) {
+      bubbles[i].classList.add("active");
+    }
+  }
+  filterTickets();
+}
+
 // ================= NOTIFICATIONS =================
 async function checkNotifications() {
   if(!currentUser) return;
@@ -256,7 +266,7 @@ function render() {
   const el = document.getElementById("tickets");
   el.innerHTML = "";
   
-  const selectedCategory = document.getElementById("categoryFilter").value;
+  const selectedCategory = currentCategory;
   const searchTerm = document.getElementById("searchInput").value.toLowerCase();
 
   ticketsData.forEach(tick => {

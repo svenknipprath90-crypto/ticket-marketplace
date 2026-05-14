@@ -231,3 +231,37 @@ input:focus, textarea:focus, select:focus {
   color: white; font-size: 40px;
   cursor: pointer;
 }
+
+/* ================= CATEGORY BUBBLES ================= */
+.category-bubbles {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding-bottom: 15px;
+  margin-top: 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+.category-bubbles::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+.bubble {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 8px 16px;
+  color: white;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: inherit;
+  font-size: 14px;
+}
+.bubble:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.bubble.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border-color: transparent;
+  font-weight: bold;
+}

@@ -192,6 +192,7 @@ async function render(tData) {
       <p style="color: ${isSoldOut ? 'var(--danger)' : 'var(--success)'}; font-weight: bold; font-size: 18px;">
         ${isSoldOut ? '❌ ' + t("soldOut") : '📦 ' + availableText}
       </p>
+      <button class="btn btn-glass" onclick="shareTicket()" style="margin-top: 15px; width: 100%; border: 1px dashed var(--primary); color: var(--primary);">🔗 Ticket teilen / Share</button>
     </div>
     
     ${!isSoldOut ? `
@@ -206,6 +207,24 @@ async function render(tData) {
   `;
   
   if(!isSoldOut) updatePrice();
+}
+
+// ================= SHARE TICKET =================
+async function shareTicket() {
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: currentTicket.title,
+        text: 'Schau dir dieses Ticket auf dem Pi Marketplace an!',
+        url: window.location.href,
+      });
+    } catch (err) {
+      console.log('Error sharing', err);
+    }
+  } else {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link in die Zwischenablage kopiert! / Link copied to clipboard!');
+  }
 }
 
 // ================= PAYMENT =================
