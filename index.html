@@ -38,6 +38,8 @@
 </head>
 
 <body>
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
 <div class="container">
 
   <!-- HEADER -->
@@ -72,6 +74,12 @@
     </a>
   </div>
 
+  <!-- HERO BANNER -->
+  <div class="hero-banner">
+    <h1 class="hero-title">Kaufe & Verkaufe Erlebnisse.</h1>
+    <p class="hero-subtitle">Der erste grenzenlose Marktplatz für Tickets, angetrieben von Pi Network.</p>
+  </div>
+
   <!-- FILTER -->
   <div class="filter-bar" style="margin-bottom: 20px;">
     <input type="text" id="searchInput" data-i18n="searchPlaceholder" placeholder="Suche..." onkeyup="filterTickets()" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
@@ -79,9 +87,13 @@
     <div class="category-bubbles" id="categoryBubbles">
       <button class="bubble active" onclick="setCategory('all')">Alles</button>
       <button class="bubble" onclick="setCategory('Fußball')">⚽️ Fußball</button>
-      <button class="bubble" onclick="setCategory('Basketball')">🏀 Basketball</button>
       <button class="bubble" onclick="setCategory('American Football')">🏈 Football</button>
-      <button class="bubble" onclick="setCategory('Konzert')">🎸 Konzert</button>
+      <button class="bubble" onclick="setCategory('Basketball')">🏀 Basketball</button>
+      <button class="bubble" onclick="setCategory('Darts')">🎯 Darts</button>
+      <button class="bubble" onclick="setCategory('Kampfsport')">🥊 Kampfsport</button>
+      <button class="bubble" onclick="setCategory('eSports')">🎮 eSports</button>
+      <button class="bubble" onclick="setCategory('Radsport')">🚴‍♂️ Radsport</button>
+      <button class="bubble" onclick="setCategory('Leichtathletik')">🏃‍♂️ Leichtathletik</button>
       <button class="bubble" onclick="setCategory('Handball')">🤾‍♂️ Handball</button>
       <button class="bubble" onclick="setCategory('Eishockey')">🏒 Eishockey</button>
       <button class="bubble" onclick="setCategory('Tennis')">🎾 Tennis</button>
@@ -89,9 +101,15 @@
       <button class="bubble" onclick="setCategory('Wintersport')">⛷️ Wintersport</button>
       <button class="bubble" onclick="setCategory('Schwimmen')">🏊‍♂️ Schwimmen</button>
       <button class="bubble" onclick="setCategory('Rugby')">🏉 Rugby</button>
-      <button class="bubble" onclick="setCategory('Musical')">🎭 Musical</button>
-      <button class="bubble" onclick="setCategory('Theater/Comedy')">🎬 Theater</button>
-      <button class="bubble" onclick="setCategory('Olympia/Turnier')">🏆 Turnier</button>
+      <button class="bubble" onclick="setCategory('Festival')">🎪 Festival</button>
+      <button class="bubble" onclick="setCategory('Konzert')">🎸 Konzert</button>
+      <button class="bubble" onclick="setCategory('Messe/Convention')">🎡 Messe/Convention</button>
+      <button class="bubble" onclick="setCategory('Freizeitpark')">🎢 Freizeitpark</button>
+      <button class="bubble" onclick="setCategory('Kultur/Klassik')">🎭 Kultur/Klassik</button>
+      <button class="bubble" onclick="setCategory('Musical')">🎶 Musical</button>
+      <button class="bubble" onclick="setCategory('Theater/Comedy')">🎬 Theater/Comedy</button>
+      <button class="bubble" onclick="setCategory('Olympia/Turnier')">🏆 Olympia/Turnier</button>
+      <button class="bubble" onclick="setCategory('Reise/Gutschein')">🚌 Reise/Gutschein</button>
       <button class="bubble" onclick="setCategory('Sonstiges')">🎫 Sonstiges</button>
     </div>
   </div>
@@ -226,10 +244,19 @@ async function toggleFavorite(ticketId, event) {
 
 // ================= TICKETS =================
 let ticketsData = [];
+let verifiedSellers = [];
 
 async function loadTickets() {
-  const { data } = await db.from("tickets").select("*").order("created_at", { ascending: false });
-  ticketsData = data || [];
+  const [ticketsRes, verifiedRes] = await Promise.all([
+    db.from("tickets").select("*").order("created_at", { ascending: false }),
+    db.from("verified_sellers").select("username")
+  ]);
+  
+  ticketsData = ticketsRes.data || [];
+  if (verifiedRes.data) {
+    verifiedSellers = verifiedRes.data.map(v => v.username);
+  }
+  
   render();
 }
 
@@ -291,6 +318,8 @@ function render() {
 
     const isFav = favorites.includes(tick.id);
     const availableText = t("available", { n: tick.quantity || 1 });
+    const isVerified = verifiedSellers.includes(tick.seller);
+    const verifiedIcon = isVerified ? '<span class="verified-badge" title="Verifizierter Verkäufer">☑️</span>' : '';
 
     el.innerHTML += `
       <div class="card" onclick="window.location.href='ticket.html?id=${tick.id}'" style="cursor:pointer;">
@@ -298,6 +327,7 @@ function render() {
         <div class="card-content">
           <div class="tag">${tick.category}</div>
           <h3 class="card-title">${tick.title}</h3>
+          <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 5px;">👤 ${tick.seller || 'Unbekannt'} ${verifiedIcon}</p>
           <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">${tick.description.substring(0, 50)}...</p>
           <p style="color: var(--success); font-weight: bold; font-size: 14px; margin-bottom: 5px;">📦 ${availableText}</p>
           

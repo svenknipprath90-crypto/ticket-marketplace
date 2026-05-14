@@ -126,7 +126,12 @@ async function loadTicket() {
     return;
   }
   currentTicket = data;
-  render(data);
+  
+  // Fetch verification status
+  const { data: verifiedData } = await db.from("verified_sellers").select("username").eq("username", data.seller);
+  const isVerified = verifiedData && verifiedData.length > 0;
+
+  render(data, isVerified);
 }
 
 // ================= LOAD RATING =================
@@ -141,7 +146,7 @@ async function loadSellerRating(sellerName) {
 }
 
 // ================= UI =================
-async function render(tData) {
+async function render(tData, isVerified) {
   const maxQty = tData.quantity || 1;
   const isSoldOut = maxQty <= 0;
   
@@ -178,7 +183,8 @@ async function render(tData) {
   const imageHtml = tData.image ? `<img src="${tData.image}" class="ticket-detail-img" onclick="openLightbox('${tData.image}')">` : "";
   const locationHtml = tData.location ? `<p><strong>${t("location")}:</strong> ${tData.location}</p>` : "";
   const availableText = t("available", { n: maxQty });
-  const sellerDisplay = tData.seller ? `<p><strong>Verkäufer:</strong> <a href="profile.html?user=${encodeURIComponent(tData.seller)}" style="color:var(--primary); text-decoration:none; font-weight:bold;">${tData.seller}</a> ${ratingHtml}</p>` : "";
+  const verifiedIcon = isVerified ? '<span class="verified-badge" title="Verifizierter Verkäufer">☑️</span>' : '';
+  const sellerDisplay = tData.seller ? `<p><strong>Verkäufer:</strong> <a href="profile.html?user=${encodeURIComponent(tData.seller)}" style="color:var(--primary); text-decoration:none; font-weight:bold;">${tData.seller}</a> ${verifiedIcon} ${ratingHtml}</p>` : "";
 
   document.getElementById("content").innerHTML = `
     ${imageHtml}

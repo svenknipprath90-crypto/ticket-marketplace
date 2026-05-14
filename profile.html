@@ -19,7 +19,7 @@
     </div>
   </div>
 
-  <div class="glass-panel" style="text-align: center; margin-bottom: 30px;">
+  <div class="glass-panel" id="profileHeader" style="text-align: center; margin-bottom: 30px;">
     <h1 id="profileName" style="margin-top:0;">👤 Laden...</h1>
     <h2 id="profileRating" style="color: #fbbf24;">⭐️ ...</h2>
     <p data-i18n="sellerProfile" style="color: var(--text-muted);">Verkäufer Profil</p>
@@ -67,16 +67,25 @@
       if (favs) favorites = favs.map(f => f.ticket_id);
     }
 
+    // Check Verification
+    const { data: verifiedData } = await db.from("verified_sellers").select("username").eq("username", sellerName);
+    const isVerified = verifiedData && verifiedData.length > 0;
+    const verifiedIcon = isVerified ? '<span class="verified-badge" title="Verifizierter Verkäufer" style="font-size:24px;">☑️</span>' : '';
+
     // Load Rating
-    const { data: ratingsData } = await db.from("ratings").select("rating").eq("seller", sellerName);
-    if (ratingsData && ratingsData.length > 0) {
+    const { data: ratingData } = await db.from("ratings").select("rating").eq("target_user", sellerName);
+    let ratingHtml = "<span style='color:var(--text-muted);font-size:14px;'>(Keine Bewertungen)</span>";
+    if (ratingData && ratingData.length > 0) {
       let sum = 0;
-      ratingsData.forEach(r => sum += r.rating);
-      let avg = (sum / ratingsData.length).toFixed(1);
-      document.getElementById("profileRating").innerText = `⭐️ ${avg} / 5 (${ratingsData.length} Bewertungen)`;
-    } else {
-      document.getElementById("profileRating").innerText = `⭐️ Keine Bewertungen`;
+      ratingData.forEach(r => sum += r.rating);
+      const avg = (sum / ratingData.length).toFixed(1);
+      ratingHtml = `<span style="color:#fbbf24;font-size:18px;">⭐ ${avg}/5</span> <span style="color:var(--text-muted);font-size:14px;">(${ratingData.length})</span>`;
     }
+
+    document.getElementById("profileHeader").innerHTML = `
+      <h1 style="margin: 0 0 5px 0; display:flex; align-items:center; justify-content:center; gap:10px;">👤 ${sellerName} ${verifiedIcon}</h1>
+      ${ratingHtml}
+    `;
 
     // Load Tickets
     const { data: ticketsData } = await db

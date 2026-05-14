@@ -134,6 +134,10 @@
     document.getElementById("statOrders").innerText = totalOrders;
     document.getElementById("statVolume").innerText = totalVolume.toFixed(2);
 
+    // Fetch verified sellers
+    const { data: verifiedData } = await db.from("verified_sellers").select("username");
+    const verifiedUsers = verifiedData ? verifiedData.map(v => v.username) : [];
+
     // 2. Fetch all Tickets for Stats & Moderation
     const { data: ticketsData, error: ticketsError } = await db.from("tickets").select("*").order("created_at", { ascending: false });
     
@@ -147,11 +151,16 @@
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Keine Tickets auf der Plattform.</td></tr>';
       } else {
         ticketsData.forEach(t => {
+          const isVerified = verifiedUsers.includes(t.seller);
+          const verifyBtnHtml = isVerified 
+            ? `<button onclick="toggleVerify('${t.seller}', true)" class="btn btn-glass" style="padding: 2px 5px; font-size: 10px; color: #3b82f6;">☑️ Entziehen</button>` 
+            : `<button onclick="toggleVerify('${t.seller}', false)" class="btn btn-glass" style="padding: 2px 5px; font-size: 10px;">Verifizieren</button>`;
+
           tbody.innerHTML += `
             <tr>
               <td>${t.id}</td>
               <td><strong>${t.title}</strong><br><span style="font-size:12px; color:var(--text-muted);">${t.category}</span></td>
-              <td><a href="profile.html?user=${t.seller}" style="color:var(--secondary); text-decoration:none;">${t.seller}</a></td>
+              <td><a href="profile.html?user=${t.seller}" style="color:var(--secondary); text-decoration:none;">${t.seller}</a><br>${verifyBtnHtml}</td>
               <td>${t.price} Pi</td>
               <td>${t.quantity}</td>
               <td>
@@ -164,6 +173,18 @@
     } else {
       document.getElementById("adminTicketList").innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Fehler beim Laden der Tickets.</td></tr>';
     }
+  }
+
+  // ================= VERIFICATION ACTION =================
+  async function toggleVerify(username, isCurrentlyVerified) {
+    if(isCurrentlyVerified) {
+      await db.from("verified_sellers").delete().eq("username", username);
+      alert(username + " ist nicht mehr verifiziert.");
+    } else {
+      await db.from("verified_sellers").insert({ username: username });
+      alert(username + " wurde verifiziert! ☑️");
+    }
+    loadAdminData();
   }
 
   // ================= MODERATION ACTION =================
