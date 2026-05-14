@@ -85,7 +85,7 @@
   );
 
   async function createTicket() {
-    alert("Button Klick registriert! Starte Verarbeitung...");
+    alert("Klick registriert! Fange an...");
     try {
       const title = document.getElementById("title").value.trim();
       const category = document.getElementById("category").value;
@@ -100,7 +100,6 @@
         return;
       }
 
-      // Handle comma in price
       priceStr = priceStr.replace(',', '.');
       const parsedPrice = Number(priceStr);
       if (isNaN(parsedPrice)) {
@@ -114,7 +113,7 @@
       let imageUrl = "";
 
       if (file) {
-        const fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.\-_]/g, ''); // sanitize filename
+        const fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
         const { data, error: uploadError } = await supabase.storage.from("tickets").upload(fileName, file);
 
         if (uploadError) {
@@ -151,7 +150,7 @@
       }
     } catch (err) {
       console.error(err);
-      alert("Ein unerwarteter Fehler ist aufgetreten: " + err.message);
+      alert("Fehler: " + err.message);
       document.getElementById("createBtn").innerText = t("saveBtn");
       document.getElementById("createBtn").disabled = false;
     }
