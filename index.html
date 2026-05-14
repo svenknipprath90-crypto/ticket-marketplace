@@ -60,6 +60,7 @@
     <button id="loginBtn" class="btn btn-success" data-i18n="login">🔐 Login mit Pi</button>
     <button id="logoutBtn" class="btn btn-danger" style="display:none;" data-i18n="logout">🚪 Logout</button>
     <a href="create2.html" class="btn btn-primary" data-i18n="createTicketBtn">➕ Ticket erstellen</a>
+    <a href="admin.html" class="btn btn-danger" id="adminBtn" style="display:none; background: linear-gradient(135deg, #b91c1c, #991b1b);">🛡️ Admin</a>
     <a href="favorites.html?v=3" class="btn btn-glass" data-i18n="favorites">❤️ Favoriten</a>
     <a href="purchases.html?v=3" class="btn btn-glass" id="myPurchasesBtn" style="display:none; position:relative;" data-i18n="myPurchases">
       💰 Meine Käufe
@@ -112,6 +113,7 @@ function updateUI() {
   const mySalesBtn = document.getElementById("mySalesBtn");
 
   const myPurchasesBtn = document.getElementById("myPurchasesBtn");
+  const adminBtn = document.getElementById("adminBtn");
 
   if (currentUser) {
     userEl.innerText = "👤 " + currentUser;
@@ -119,6 +121,13 @@ function updateUI() {
     logoutBtn.style.display = "inline-flex";
     mySalesBtn.style.display = "inline-flex";
     myPurchasesBtn.style.display = "inline-flex";
+    
+    if (currentUser === "Gkcity1990") {
+      adminBtn.style.display = "inline-flex";
+    } else {
+      adminBtn.style.display = "none";
+    }
+
     loadFavorites();
     checkNotifications();
   } else {
@@ -127,6 +136,7 @@ function updateUI() {
     logoutBtn.style.display = "none";
     mySalesBtn.style.display = "none";
     myPurchasesBtn.style.display = "none";
+    adminBtn.style.display = "none";
   }
 
   // Active language button

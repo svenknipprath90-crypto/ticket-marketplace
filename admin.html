@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css">
+  
+  <style>
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--primary);
+      border-radius: 15px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-card h2 {
+      font-size: 36px;
+      margin: 10px 0;
+      color: #fbbf24;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .admin-table th, .admin-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .admin-table th {
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 1000px;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="index.html" class="btn btn-glass">⬅ Zurück zum Marktplatz</a>
+    <div style="color: var(--danger); font-weight: bold;">🔒 ADMIN BEREICH</div>
+  </div>
+
+  <div class="glass-panel" style="margin-bottom: 30px;">
+    <h1 style="margin-top: 0;">Willkommen, Kommander 🫡</h1>
+    <p style="color: var(--text-muted);">Das ist das streng geheime Admin-Dashboard für <strong>Gkcity1990</strong>. Hier siehst du die Live-Daten der gesamten Plattform.</p>
+  </div>
+
+  <div class="admin-stats">
+    <div class="stat-card">
+      <p>Aktive Tickets</p>
+      <h2 id="statTickets">0</h2>
+    </div>
+    <div class="stat-card">
+      <p>Gesamt Bestellungen</p>
+      <h2 id="statOrders">0</h2>
+    </div>
+    <div class="stat-card">
+      <p>Handelsvolumen (Pi)</p>
+      <h2 id="statVolume">0</h2>
+    </div>
+  </div>
+
+  <div class="glass-panel">
+    <h2 style="margin-top: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">Moderation: Alle Tickets</h2>
+    <div style="overflow-x: auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Titel</th>
+            <th>Verkäufer</th>
+            <th>Preis</th>
+            <th>Bestand</th>
+            <th>Aktion</th>
+          </tr>
+        </thead>
+        <tbody id="adminTicketList">
+          <tr><td colspan="6" style="text-align:center;">Lade Daten...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ================= ADMIN SECURITY =================
+  const ADMIN_USER = "Gkcity1990";
+  let currentUser = localStorage.getItem("pi_user") || null;
+
+  if (currentUser !== ADMIN_USER) {
+    alert("Zugriff verweigert! Dieser Bereich ist nur für den Plattform-Betreiber zugänglich.");
+    window.location.href = "index.html";
+  }
+
+  // ================= SUPABASE =================
+  const db = window.supabase.createClient(
+    "https://rucejmhjgfvlntoxhczm.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+  );
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (currentUser === ADMIN_USER) {
+      loadAdminData();
+    }
+  });
+
+  async function loadAdminData() {
+    // 1. Fetch all Orders for Stats
+    const { data: ordersData, error: ordersError } = await db.from("orders").select("*");
+    let totalOrders = 0;
+    let totalVolume = 0;
+    
+    if (ordersData) {
+      totalOrders = ordersData.length;
+      ordersData.forEach(o => {
+        totalVolume += parseFloat(o.total_price || 0);
+      });
+    }
+
+    document.getElementById("statOrders").innerText = totalOrders;
+    document.getElementById("statVolume").innerText = totalVolume.toFixed(2);
+
+    // 2. Fetch all Tickets for Stats & Moderation
+    const { data: ticketsData, error: ticketsError } = await db.from("tickets").select("*").order("created_at", { ascending: false });
+    
+    if (ticketsData) {
+      document.getElementById("statTickets").innerText = ticketsData.length;
+      
+      const tbody = document.getElementById("adminTicketList");
+      tbody.innerHTML = "";
+
+      if (ticketsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Keine Tickets auf der Plattform.</td></tr>';
+      } else {
+        ticketsData.forEach(t => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${t.id}</td>
+              <td><strong>${t.title}</strong><br><span style="font-size:12px; color:var(--text-muted);">${t.category}</span></td>
+              <td><a href="profile.html?user=${t.seller}" style="color:var(--secondary); text-decoration:none;">${t.seller}</a></td>
+              <td>${t.price} Pi</td>
+              <td>${t.quantity}</td>
+              <td>
+                <button onclick="adminDeleteTicket(${t.id}, '${t.title}')" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">🗑️ Löschen</button>
+              </td>
+            </tr>
+          `;
+        });
+      }
+    } else {
+      document.getElementById("adminTicketList").innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Fehler beim Laden der Tickets.</td></tr>';
+    }
+  }
+
+  // ================= MODERATION ACTION =================
+  async function adminDeleteTicket(ticketId, ticketTitle) {
+    if (confirm(`ACHTUNG ADMIN: Willst du das Ticket "${ticketTitle}" WIRKLICH endgültig löschen?`)) {
+      const { error } = await db.from("tickets").delete().eq("id", ticketId);
+      if (error) {
+        alert("Löschen fehlgeschlagen: " + error.message);
+      } else {
+        alert("Ticket erfolgreich als Moderator gelöscht.");
+        loadAdminData(); // Refresh table
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
