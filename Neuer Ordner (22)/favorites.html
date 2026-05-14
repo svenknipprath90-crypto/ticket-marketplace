@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Favoriten</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+<link rel="stylesheet" href="style.css">
+<script src="i18n.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="index.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
+    <div class="lang-toggle">
+      <button class="lang-btn" id="lang-de" onclick="setLanguage('de'); window.location.reload();">🇩🇪</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en'); window.location.reload();">🇬🇧</button>
+    </div>
+  </div>
+
+  <h1 data-i18n="favorites">❤️ Favoriten</h1>
+  <p data-i18n="favDesc" style="color: var(--text-muted); margin-bottom: 30px;">
+    Hier siehst du alle Tickets, die du als Favorit gespeichert hast.
+  </p>
+
+  <div id="tickets" class="tickets-grid"></div>
+</div>
+
+<script>
+// ================= USER & INIT =================
+let currentUser = localStorage.getItem("pi_user") || null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("lang-de").classList.toggle("active", currentLang === "de");
+  document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+
+  if (!currentUser) {
+    alert(t("notLoggedIn"));
+    window.location.href = "index.html";
+  } else {
+    loadFavorites();
+  }
+});
+
+// ================= SUPABASE =================
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
+
+// ================= LOAD FAVORITES =================
+async function loadFavorites() {
+  const { data: favs } = await db.from("favorites").select("*").eq("user_id", currentUser);
+
+  const el = document.getElementById("tickets");
+
+  if (!favs || favs.length === 0) {
+    el.innerHTML = `<div class="glass-panel" style="text-align:center; grid-column: 1 / -1;">${t("noFavsHere")}</div>`;
+    return;
+  }
+
+  const ids = favs.map(f => f.ticket_id);
+  const { data: tickets } = await db.from("tickets").select("*").in("id", ids);
+
+  render(tickets || []);
+}
+
+// ================= REMOVE FAVORITE =================
+async function removeFavorite(ticketId, event) {
+  event.stopPropagation();
+  await db.from("favorites").delete().eq("user_id", currentUser).eq("ticket_id", ticketId);
+  loadFavorites();
+}
+
+// ================= RENDER =================
+function render(tickets) {
+  const el = document.getElementById("tickets");
+  el.innerHTML = "";
+
+  tickets.forEach(tick => {
+    const availableText = t("available", { n: tick.quantity || 1 });
+
+    el.innerHTML += `
+      <div class="card" onclick="window.location.href='ticket.html?id=${tick.id}'" style="cursor:pointer;">
+        ${tick.image ? `<img src="${tick.image}">` : ""}
+        <div class="card-content">
+          <div class="tag">${tick.category}</div>
+          <h3 class="card-title">${tick.title}</h3>
+          <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">${tick.description ? tick.description.substring(0, 50) + '...' : ''}</p>
+          <p style="color: var(--success); font-weight: bold; font-size: 14px; margin-bottom: 5px;">📦 ${availableText}</p>
+          
+          <div class="card-footer">
+            <span class="price">${tick.price} Pi</span>
+            <span class="heart" onclick="removeFavorite(${tick.id}, event)">❤️</span>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>

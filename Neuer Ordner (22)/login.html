@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Login</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+  background:#0b1220;
+  color:white;
+  font-family:sans-serif;
+  padding:20px;
+}
+input {
+  width:100%;
+  padding:10px;
+  margin-bottom:10px;
+}
+button {
+  width:100%;
+  padding:10px;
+  background:#2563eb;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Login / Registrierung</h2>
+
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Passwort">
+
+<button onclick="login()">Login</button>
+
+<br><br>
+<a href="index.html">← Zurück</a>
+
+<script>
+
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
+
+async function login() {
+
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  let { error } = await db.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    let res = await db.auth.signUp({ email, password });
+    if (res.error) return alert(res.error.message);
+    alert("Account erstellt!");
+  } else {
+    alert("Eingeloggt!");
+  }
+
+  window.location.href = "index.html";
+}
+
+</script>
+
+</body>
+</html>

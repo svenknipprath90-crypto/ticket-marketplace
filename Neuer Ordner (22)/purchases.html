@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Meine Käufe</title>
+
+<!-- External Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://sdk.minepi.com/pi-sdk.js"></script>
+
+<!-- CSS & i18n -->
+<link rel="stylesheet" href="style.css">
+<script src="i18n.js"></script>
+
+<style>
+.order-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--glass-border);
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+}
+.status-paid { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+.status-shipped { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="index.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
+    <div class="lang-toggle">
+      <button class="lang-btn" id="lang-de" onclick="setLanguage('de'); window.location.reload();">🇩🇪</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en'); window.location.reload();">🇬🇧</button>
+    </div>
+  </div>
+
+  <h1 data-i18n="myPurchases">💰 Meine Käufe</h1>
+  <p data-i18n="purchasesDesc" style="color: var(--text-muted); margin-bottom: 30px;">
+    Hier siehst du alle deine bezahlten Bestellungen. Klicke auf "Details & Chat", um die Versandadresse einzugeben oder mit dem Verkäufer zu schreiben.
+  </p>
+
+  <div id="ordersList">
+    <div style="text-align: center;">Lade... / Loading...</div>
+  </div>
+
+</div>
+
+<script>
+// ================= USER & INIT =================
+let currentUser = localStorage.getItem("pi_user") || null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("lang-de").classList.toggle("active", currentLang === "de");
+  document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+
+  if (!currentUser) {
+    alert(t("notLoggedIn"));
+    window.location.href = "index.html";
+  } else {
+    loadOrders();
+  }
+});
+
+// ================= SUPABASE =================
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
+
+// ================= LOAD ORDERS =================
+async function loadOrders() {
+  const { data, error } = await db
+    .from("orders")
+    .select("*")
+    .eq("buyer", currentUser)
+    .order("created_at", { ascending: false });
+
+  const el = document.getElementById("ordersList");
+  
+  if (error || !data || data.length === 0) {
+    el.innerHTML = "<div class='glass-panel' style='text-align:center;'>Du hast noch keine Tickets gekauft. / You haven't bought anything yet.</div>";
+    return;
+  }
+
+  el.innerHTML = "";
+  
+  data.forEach(order => {
+    let statusClass = order.status === 'shipped' ? 'status-shipped' : 'status-paid';
+    let statusText = order.status === 'shipped' ? 'Versendet' : 'Bezahlt';
+
+    el.innerHTML += `
+      <div class="order-card">
+        <div class="order-header">
+          <strong>Order-ID: ${order.id.substring(0,8)}...</strong>
+          <span class="status-badge ${statusClass}">${statusText}</span>
+        </div>
+        <h3>${order.ticket_title || 'Ticket'}</h3>
+        <p><strong>Menge:</strong> ${order.quantity} | <strong>Preis:</strong> ${order.total_price} Pi</p>
+        <p><strong>Verkäufer:</strong> ${order.seller}</p>
+        <div style="margin-top: 15px;">
+          <a href="order.html?id=${order.id}" class="btn btn-primary" style="width: 100%;">📄 ${t('orderDetails')} & Chat</a>
+        </div>
+      </div>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>
