@@ -98,7 +98,8 @@ const translations = {
     openScanner: "📸 Ticket Scanner (Für den Einlass)",
     scannerTitle: "📸 EINLASS-SCANNER",
     scanTicket: "Ticket abscannen",
-    nextTicket: "Nächstes Ticket scannen"
+    nextTicket: "Nächstes Ticket scannen",
+    hotBadge: "🔥 Fast Ausverkauft"
   },
   en: {
     title: "🎟️ Pi Ticket Marketplace",
@@ -199,7 +200,8 @@ const translations = {
     openScanner: "📸 Ticket Scanner (Entrance)",
     scannerTitle: "📸 ENTRANCE SCANNER",
     scanTicket: "Scan Ticket",
-    nextTicket: "Scan Next Ticket"
+    nextTicket: "Scan Next Ticket",
+    hotBadge: "🔥 Almost Sold Out"
   }
 };
 

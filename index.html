@@ -321,8 +321,14 @@ function render() {
     const isVerified = verifiedSellers.includes(tick.seller);
     const verifiedIcon = isVerified ? '<span class="verified-badge" title="Verifizierter Verkäufer">☑️</span>' : '';
 
+    let hotBadge = "";
+    if (tick.quantity <= 2) {
+      hotBadge = `<div style="position: absolute; top: 10px; left: 10px; background: rgba(239, 68, 68, 0.9); color: white; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 12px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5); z-index: 2;" data-i18n="hotBadge">🔥 Fast Ausverkauft</div>`;
+    }
+
     el.innerHTML += `
-      <div class="card" onclick="window.location.href='ticket.html?id=${tick.id}'" style="cursor:pointer;">
+      <div class="card" onclick="window.location.href='ticket.html?id=${tick.id}'" style="cursor:pointer; position:relative;">
+        ${hotBadge}
         ${tick.image ? `<img src="${tick.image}">` : ""}
         <div class="card-content">
           <div class="tag">${tick.category}</div>
@@ -341,6 +347,8 @@ function render() {
       </div>
     `;
   });
+  
+  setTimeout(applyTranslations, 100);
 }
 
 // Override setLanguage to also re-render tickets
