@@ -211,19 +211,35 @@ async function render(tData) {
 
 // ================= SHARE TICKET =================
 async function shareTicket() {
+  const url = window.location.href;
+  const title = currentTicket ? currentTicket.title : 'Pi Ticket Marketplace';
+
   if (navigator.share) {
     try {
       await navigator.share({
-        title: currentTicket.title,
-        text: 'Schau dir dieses Ticket auf dem Pi Marketplace an!',
-        url: window.location.href,
+        title: title,
+        text: 'Schau dir dieses Ticket an!',
+        url: url,
       });
     } catch (err) {
-      console.log('Error sharing', err);
+      // User cancelled or unsupported
+      fallbackShare(url);
     }
   } else {
-    navigator.clipboard.writeText(window.location.href);
-    alert('Link in die Zwischenablage kopiert! / Link copied to clipboard!');
+    fallbackShare(url);
+  }
+}
+
+function fallbackShare(url) {
+  try {
+    // Try modern clipboard
+    navigator.clipboard.writeText(url).then(() => {
+      alert("Link wurde kopiert! / Link copied!\n\n" + url);
+    }).catch(() => {
+      prompt("Bitte kopiere den Link manuell / Please copy link manually:", url);
+    });
+  } catch(e) {
+    prompt("Bitte kopiere den Link manuell / Please copy link manually:", url);
   }
 }
 
