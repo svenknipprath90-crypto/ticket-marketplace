@@ -133,6 +133,7 @@ async function loadSales() {
 
   if (!ordersData || ordersData.length === 0) {
     el.innerHTML += "<div class='glass-panel' style='text-align:center;'>Noch keine Bestellungen erhalten. / No orders received yet.</div>";
+    setTimeout(applyTranslations, 100);
     return;
   }
 
