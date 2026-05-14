@@ -115,12 +115,12 @@ function renderOrder() {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${currentOrder.id}`;
     qrCodeHtml = `
       <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border);">
-        <h4 style="margin-bottom: 10px;">🎫 Dein Einlass-Code / Your Ticket</h4>
-        <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Zeige diesen Code beim Einlass vor. / Show this code at the entrance.</p>
+        <h4 style="margin-bottom: 10px;" data-i18n="qrTitle">🎫 Dein Einlass-Code</h4>
+        <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;" data-i18n="qrDesc">Zeige diesen Code beim Einlass vor.</p>
         <div style="background: white; display: inline-block; padding: 10px; border-radius: 10px;">
           <img src="${qrUrl}" alt="QR Code" style="width: 200px; height: 200px;">
         </div>
-        ${currentOrder.used ? '<p style="color:var(--danger); font-weight:bold; margin-top:10px;">❌ BEREITS ENTWERTET / ALREADY USED</p>' : ''}
+        ${currentOrder.used ? '<p style="color:var(--danger); font-weight:bold; margin-top:10px;" data-i18n="qrUsed">❌ BEREITS ENTWERTET</p>' : ''}
       </div>
     `;
   }
@@ -191,6 +191,7 @@ function renderOrder() {
   }
 
   document.getElementById("content").innerHTML = html;
+  setTimeout(applyTranslations, 100);
 }
 
 // ================= SHIPPING LOGIC =================

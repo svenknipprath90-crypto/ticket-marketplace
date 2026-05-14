@@ -89,8 +89,16 @@ const translations = {
     askBtn: "Frage senden",
     sellerBadge: "Verkäufer",
     requestPayout: "💰 Auszahlung anfordern",
+    requestPayout: "💰 Auszahlung anfordern",
     payoutRequested: "⏳ Auszahlung angefragt",
-    payoutDone: "✅ Ausgezahlt"
+    payoutDone: "✅ Ausgezahlt",
+    qrTitle: "🎫 Dein Einlass-Code",
+    qrDesc: "Zeige diesen Code beim Einlass vor.",
+    qrUsed: "❌ BEREITS ENTWERTET",
+    openScanner: "📸 Ticket Scanner (Für den Einlass)",
+    scannerTitle: "📸 EINLASS-SCANNER",
+    scanTicket: "Ticket abscannen",
+    nextTicket: "Nächstes Ticket scannen"
   },
   en: {
     title: "🎟️ Pi Ticket Marketplace",
@@ -182,8 +190,16 @@ const translations = {
     askBtn: "Send Question",
     sellerBadge: "Seller",
     requestPayout: "💰 Request Payout",
+    requestPayout: "💰 Request Payout",
     payoutRequested: "⏳ Payout Requested",
-    payoutDone: "✅ Paid Out"
+    payoutDone: "✅ Paid Out",
+    qrTitle: "🎫 Your Entry Ticket",
+    qrDesc: "Show this code at the entrance.",
+    qrUsed: "❌ ALREADY USED",
+    openScanner: "📸 Ticket Scanner (Entrance)",
+    scannerTitle: "📸 ENTRANCE SCANNER",
+    scanTicket: "Scan Ticket",
+    nextTicket: "Scan Next Ticket"
   }
 };
 

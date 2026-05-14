@@ -9,8 +9,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
-<!-- CSS -->
+<!-- CSS & i18n -->
 <link rel="stylesheet" href="style.css">
+<script src="i18n.js"></script>
 
 <style>
 #reader {
@@ -38,18 +39,22 @@
 <div class="container" style="max-width: 600px;">
   
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <a href="my-sales.html" class="btn btn-glass">⬅ Zurück</a>
-    <div style="color: var(--primary); font-weight: bold;">📸 EINLASS-SCANNER</div>
+    <a href="my-sales.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
+    <div style="color: var(--primary); font-weight: bold;" data-i18n="scannerTitle">📸 EINLASS-SCANNER</div>
+    <div class="lang-toggle">
+      <button class="lang-btn" id="lang-de" onclick="setLanguage('de'); window.location.reload();">🇩🇪</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en'); window.location.reload();">🇬🇧</button>
+    </div>
   </div>
 
-  <h1 style="text-align:center; margin-bottom:20px;">Ticket abscannen</h1>
+  <h1 style="text-align:center; margin-bottom:20px;" data-i18n="scanTicket">Ticket abscannen</h1>
   
   <div id="reader"></div>
 
   <div id="resultBox" class="result-box">
     <h2 id="resultTitle">Lade...</h2>
     <p id="resultText"></p>
-    <button onclick="resetScanner()" class="btn btn-primary" style="margin-top:15px; width:100%;">Nächstes Ticket scannen</button>
+    <button onclick="resetScanner()" class="btn btn-primary" style="margin-top:15px; width:100%;" data-i18n="nextTicket">Nächstes Ticket scannen</button>
   </div>
 
 </div>
@@ -58,9 +63,14 @@
 let currentUser = localStorage.getItem("pi_user") || null;
 
 if (!currentUser) {
-  alert("Bitte zuerst einloggen!");
+  alert(t("notLoggedIn"));
   window.location.href = "index.html";
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("lang-de").classList.toggle("active", currentLang === "de");
+  document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+});
 
 // ================= SUPABASE =================
 const db = window.supabase.createClient(
