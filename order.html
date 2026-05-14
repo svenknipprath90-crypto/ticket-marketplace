@@ -110,6 +110,21 @@ function renderOrder() {
   const isBuyer = currentOrder.buyer === currentUser;
   const isSeller = currentOrder.seller === currentUser;
 
+  let qrCodeHtml = "";
+  if (isBuyer) {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${currentOrder.id}`;
+    qrCodeHtml = `
+      <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--glass-border);">
+        <h4 style="margin-bottom: 10px;">🎫 Dein Einlass-Code / Your Ticket</h4>
+        <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">Zeige diesen Code beim Einlass vor. / Show this code at the entrance.</p>
+        <div style="background: white; display: inline-block; padding: 10px; border-radius: 10px;">
+          <img src="${qrUrl}" alt="QR Code" style="width: 200px; height: 200px;">
+        </div>
+        ${currentOrder.used ? '<p style="color:var(--danger); font-weight:bold; margin-top:10px;">❌ BEREITS ENTWERTET / ALREADY USED</p>' : ''}
+      </div>
+    `;
+  }
+
   let html = `
     <div class="section-card">
       <h3>${currentOrder.ticket_title}</h3>
@@ -117,6 +132,7 @@ function renderOrder() {
       <p><strong>Käufer:</strong> <a href="profile.html?user=${encodeURIComponent(currentOrder.buyer)}" style="color:var(--primary); text-decoration:none;">${currentOrder.buyer}</a> | <strong>Verkäufer:</strong> <a href="profile.html?user=${encodeURIComponent(currentOrder.seller)}" style="color:var(--primary); text-decoration:none;">${currentOrder.seller}</a></p>
       <p><strong>Menge:</strong> ${currentOrder.quantity} | <strong>Preis:</strong> ${currentOrder.total_price} Pi</p>
       <p><strong>Status:</strong> ${currentOrder.status === 'shipped' ? '📦 Versendet' : '✅ Bezahlt'}</p>
+      ${qrCodeHtml}
     </div>
   `;
 

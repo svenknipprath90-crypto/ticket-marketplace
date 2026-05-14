@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Scanner - Einlass</title>
+
+<!-- External Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+<!-- CSS -->
+<link rel="stylesheet" href="style.css">
+
+<style>
+#reader {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 2px solid var(--primary);
+  background: black;
+}
+.result-box {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 15px;
+  padding: 20px;
+  margin-top: 20px;
+  text-align: center;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="container" style="max-width: 600px;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="my-sales.html" class="btn btn-glass">⬅ Zurück</a>
+    <div style="color: var(--primary); font-weight: bold;">📸 EINLASS-SCANNER</div>
+  </div>
+
+  <h1 style="text-align:center; margin-bottom:20px;">Ticket abscannen</h1>
+  
+  <div id="reader"></div>
+
+  <div id="resultBox" class="result-box">
+    <h2 id="resultTitle">Lade...</h2>
+    <p id="resultText"></p>
+    <button onclick="resetScanner()" class="btn btn-primary" style="margin-top:15px; width:100%;">Nächstes Ticket scannen</button>
+  </div>
+
+</div>
+
+<script>
+let currentUser = localStorage.getItem("pi_user") || null;
+
+if (!currentUser) {
+  alert("Bitte zuerst einloggen!");
+  window.location.href = "index.html";
+}
+
+// ================= SUPABASE =================
+const db = window.supabase.createClient(
+  "https://rucejmhjgfvlntoxhczm.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+);
+
+// ================= SCANNER LOGIC =================
+const html5QrCode = new Html5Qrcode("reader");
+let isScanning = true;
+
+const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+function onScanSuccess(decodedText, decodedResult) {
+  if(!isScanning) return;
+  isScanning = false;
+  html5QrCode.stop().then((ignore) => {
+    document.getElementById("reader").style.display = "none";
+    processTicket(decodedText);
+  }).catch((err) => {
+    console.error(err);
+  });
+}
+
+function onScanFailure(error) {
+  // handle scan failure, usually better to ignore and keep scanning.
+}
+
+html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+
+async function processTicket(orderId) {
+  const resultBox = document.getElementById("resultBox");
+  const resultTitle = document.getElementById("resultTitle");
+  const resultText = document.getElementById("resultText");
+  
+  resultBox.style.display = "block";
+  resultTitle.innerHTML = "Prüfe Ticket... ⏳";
+  resultTitle.style.color = "var(--text-main)";
+  resultText.innerHTML = "";
+
+  // 1. Fetch Order
+  const { data, error } = await db.from("orders").select("*").eq("id", orderId).single();
+
+  if (error || !data) {
+    resultTitle.innerHTML = "❌ Ungültiges Ticket";
+    resultTitle.style.color = "var(--danger)";
+    resultText.innerHTML = "Dieses Ticket existiert nicht in der Datenbank.";
+    return;
+  }
+
+  // 2. Check if seller is current user
+  if (data.seller !== currentUser) {
+    resultTitle.innerHTML = "❌ Falsches Event";
+    resultTitle.style.color = "var(--danger)";
+    resultText.innerHTML = "Dieses Ticket gehört nicht zu deinem Event!";
+    return;
+  }
+
+  // 3. Check if already used
+  if (data.used) {
+    resultTitle.innerHTML = "⛔ BEREITS ENTWERTET";
+    resultTitle.style.color = "var(--danger)";
+    resultText.innerHTML = `Das Ticket von <strong>${data.buyer}</strong> wurde bereits benutzt!`;
+    return;
+  }
+
+  // 4. Mark as used
+  const { error: updateError } = await db.from("orders").update({ used: true }).eq("id", orderId);
+  if (updateError) {
+    resultTitle.innerHTML = "❌ Fehler";
+    resultText.innerHTML = "Verbindungsfehler beim Entwerten.";
+    return;
+  }
+
+  // 5. Success
+  resultTitle.innerHTML = "✅ TICKET GÜLTIG";
+  resultTitle.style.color = "var(--success)";
+  resultText.innerHTML = `
+    <strong>Event:</strong> ${data.ticket_title} <br>
+    <strong>Käufer:</strong> ${data.buyer} <br>
+    <strong>Menge:</strong> ${data.quantity} <br>
+    <div style="margin-top:10px; padding:10px; background:rgba(16,185,129,0.2); border-radius:10px;">
+      Ticket erfolgreich entwertet. Einlass gewährt!
+    </div>
+  `;
+}
+
+function resetScanner() {
+  document.getElementById("resultBox").style.display = "none";
+  document.getElementById("reader").style.display = "block";
+  isScanning = true;
+  html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, onScanFailure);
+}
+
+</script>
+
+</body>
+</html>
