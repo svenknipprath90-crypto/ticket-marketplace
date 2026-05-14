@@ -55,7 +55,7 @@ img {
 // ================= PI INIT & LOGIN =================
 Pi.init({ version: "2.0", sandbox: true });
 
-let currentUser = null;
+let currentUser = localStorage.getItem("pi_user") || null;
 
 const onIncompletePaymentFound = async (payment) => {
   console.log("Incomplete payment found:", payment);
@@ -85,21 +85,6 @@ const onIncompletePaymentFound = async (payment) => {
   } catch (e) {
     console.error("Error handling incomplete payment:", e);
   }
-};
-
-async function login() {
-  try {
-    const auth = await Pi.authenticate(["payments", "username"], onIncompletePaymentFound);
-    currentUser = auth.user.username;
-    localStorage.setItem("pi_user", currentUser);
-    console.log("User:", currentUser);
-  } catch (err) {
-    alert("Login Fehler: " + err);
-  }
-}
-
-window.onload = () => {
-  login();
 };
 
 // ================= SUPABASE =================
