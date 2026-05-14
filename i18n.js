@@ -6,6 +6,7 @@ const translations = {
     createTicketBtn: "➕ Ticket erstellen",
     favorites: "❤️ Favoriten",
     myTickets: "🎫 Meine Verkäufe",
+    myPurchases: "💰 Meine Käufe",
     notLoggedIn: "Bitte zuerst einloggen!",
     category: "Kategorie",
     location: "Liga / Zusatzinfo",
@@ -28,7 +29,17 @@ const translations = {
     createTitle: "Ticket erstellen",
     saveBtn: "Ticket speichern",
     uploadError: "Upload Fehler",
-    dbError: "Datenbank Fehler"
+    dbError: "Datenbank Fehler",
+    shippingAddress: "Versandadresse",
+    saveAddress: "Adresse speichern",
+    trackingNumber: "Sendungsnummer",
+    markShipped: "Als versendet markieren",
+    status: "Status",
+    chat: "Nachrichten / Chat",
+    send: "Senden",
+    rateSeller: "Verkäufer bewerten",
+    submitRating: "Bewertung abgeben",
+    orderDetails: "Bestelldetails"
   },
   en: {
     title: "🎟️ Pi Ticket Marketplace",
@@ -37,6 +48,7 @@ const translations = {
     createTicketBtn: "➕ Create Ticket",
     favorites: "❤️ Favorites",
     myTickets: "🎫 My Sales",
+    myPurchases: "💰 My Purchases",
     notLoggedIn: "Please login first!",
     category: "Category",
     location: "League / Additional Info",
@@ -59,7 +71,17 @@ const translations = {
     createTitle: "Create Ticket",
     saveBtn: "Save Ticket",
     uploadError: "Upload Error",
-    dbError: "Database Error"
+    dbError: "Database Error",
+    shippingAddress: "Shipping Address",
+    saveAddress: "Save Address",
+    trackingNumber: "Tracking Number",
+    markShipped: "Mark as Shipped",
+    status: "Status",
+    chat: "Messages / Chat",
+    send: "Send",
+    rateSeller: "Rate Seller",
+    submitRating: "Submit Rating",
+    orderDetails: "Order Details"
   }
 };
 

@@ -129,10 +129,23 @@ async function loadTicket() {
   render(data);
 }
 
+// ================= LOAD RATING =================
+async function loadSellerRating(sellerName) {
+  if(!sellerName) return "";
+  const { data } = await db.from("ratings").select("rating").eq("seller", sellerName);
+  if (!data || data.length === 0) return `<span style="color:var(--text-muted); font-size:14px;">(Noch keine Bewertungen)</span>`;
+  
+  const sum = data.reduce((a, b) => a + b.rating, 0);
+  const avg = (sum / data.length).toFixed(1);
+  return `<span style="color:#fbbf24; font-weight:bold;">★ ${avg}</span> <span style="font-size:12px; color:var(--text-muted);">(${data.length})</span>`;
+}
+
 // ================= UI =================
-function render(tData) {
+async function render(tData) {
   const maxQty = tData.quantity || 1;
   const isSoldOut = maxQty <= 0;
+  
+  const ratingHtml = await loadSellerRating(tData.seller);
 
   window.updatePrice = function() {
     const inputEl = document.getElementById('buyQuantity');
@@ -165,6 +178,7 @@ function render(tData) {
   const imageHtml = tData.image ? `<img src="${tData.image}" class="ticket-detail-img" onclick="openLightbox('${tData.image}')">` : "";
   const locationHtml = tData.location ? `<p><strong>${t("location")}:</strong> ${tData.location}</p>` : "";
   const availableText = t("available", { n: maxQty });
+  const sellerDisplay = tData.seller ? `<p><strong>Verkäufer:</strong> ${tData.seller} ${ratingHtml}</p>` : "";
 
   document.getElementById("content").innerHTML = `
     ${imageHtml}
@@ -172,6 +186,7 @@ function render(tData) {
     <span class="tag" style="font-size:14px;">${tData.category}</span>
     
     <div class="ticket-info" style="margin-top: 20px;">
+      ${sellerDisplay}
       <p><strong>${t("description")}:</strong><br> ${tData.description}</p>
       ${locationHtml}
       <p style="color: ${isSoldOut ? 'var(--danger)' : 'var(--success)'}; font-weight: bold; font-size: 18px;">
@@ -220,13 +235,17 @@ async function buy(amount, selectedQuantity) {
         const data = await res.json();
         if (!data.success) throw new Error("Complete fehlgeschlagen");
 
+        // --- UPDATE QUANTITY IN DATABASE & CREATE ORDER ---
         if (currentTicket) {
           let newQuantity = (currentTicket.quantity || 1) - selectedQuantity;
           let dbError = null;
+
           if (newQuantity <= 0) {
+            // Delete ticket completely if sold out
             const res = await db.from("tickets").delete().eq("id", ticketId);
             dbError = res.error;
           } else {
+            // Update quantity
             const res = await db.from("tickets").update({ quantity: newQuantity }).eq("id", ticketId);
             dbError = res.error;
           }
@@ -235,19 +254,37 @@ async function buy(amount, selectedQuantity) {
              console.error("Supabase RLS Error:", dbError);
              alert(t("success") + " ABER " + t("dbError") + " (Supabase RLS)");
           } else {
-             alert(t("success"));
+             // Create Order in 'orders' table
+             const { error: orderError } = await db.from("orders").insert([
+               {
+                 ticket_id: ticketId,
+                 ticket_title: currentTicket.title,
+                 buyer: currentUser,
+                 seller: currentTicket.seller || 'unknown',
+                 quantity: selectedQuantity,
+                 total_price: amount
+               }
+             ]);
+
+             if(orderError) {
+                console.error("Order Insert Error:", orderError);
+                alert("Zahlung erfolgreich, aber Bestellung konnte nicht gespeichert werden.");
+             } else {
+                alert(t("success"));
+             }
           }
         } else {
              alert(t("success"));
         }
 
+        // Add to purchases (legacy fallback)
         let purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
         if (!purchases.includes(ticketId)) {
           purchases.push(ticketId);
           localStorage.setItem("purchases", JSON.stringify(purchases));
         }
 
-        window.location.href = "index.html";
+        window.location.href = "purchases.html";
       },
       onCancel: () => alert(t("cancel")),
       onError: (e) => alert("Error: " + e.message)

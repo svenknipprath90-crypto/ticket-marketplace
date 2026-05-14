@@ -79,36 +79,68 @@ const db = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-// ================= LOAD SALES =================
+// ================= LOAD SALES & ORDERS =================
 async function loadSales() {
-  const { data, error } = await db
+  const el = document.getElementById("salesList");
+  el.innerHTML = "";
+
+  // 1. Load Tickets
+  const { data: ticketsData } = await db
     .from("tickets")
     .select("*")
     .eq("seller", currentUser)
     .order("created_at", { ascending: false });
 
-  const el = document.getElementById("salesList");
-  
-  if (error || !data || data.length === 0) {
-    el.innerHTML = "<div class='glass-panel' style='text-align:center;'>Du hast noch keine Tickets erstellt. / You haven't created any tickets yet.</div>";
+  if (ticketsData && ticketsData.length > 0) {
+    el.innerHTML += `<h2 style="margin-top: 30px;">Dein Ticket-Bestand</h2>`;
+    ticketsData.forEach(t => {
+      const isSoldOut = t.quantity <= 0;
+      const qtyText = isSoldOut ? "❌ Ausverkauft" : `📦 Restbestand: ${t.quantity}`;
+      const qtyColor = isSoldOut ? "var(--danger)" : "var(--success)";
+
+      el.innerHTML += `
+        <div class="sales-card">
+          ${t.image ? `<img src="${t.image}">` : `<div style="width:120px;height:120px;background:#334155;border-radius:10px;display:flex;align-items:center;justify-content:center;">Kein Bild</div>`}
+          <div class="sales-content">
+            <span class="tag">${t.category}</span>
+            <h3 style="margin: 5px 0;">${t.title}</h3>
+            <p style="margin: 5px 0; color: var(--text-muted);">${t.price} Pi</p>
+            <strong style="color: ${qtyColor};">${qtyText}</strong>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  // 2. Load Orders (Purchases made by others from this seller)
+  const { data: ordersData } = await db
+    .from("orders")
+    .select("*")
+    .eq("seller", currentUser)
+    .order("created_at", { ascending: false });
+
+  el.innerHTML += `<h2 style="margin-top: 40px; border-top: 1px solid var(--glass-border); padding-top: 20px;">Bestellungen / Orders</h2>`;
+
+  if (!ordersData || ordersData.length === 0) {
+    el.innerHTML += "<div class='glass-panel' style='text-align:center;'>Noch keine Bestellungen erhalten. / No orders received yet.</div>";
     return;
   }
 
-  el.innerHTML = "";
-  
-  data.forEach(t => {
-    const isSoldOut = t.quantity <= 0;
-    const qtyText = isSoldOut ? "❌ Ausverkauft" : `📦 Restbestand: ${t.quantity}`;
-    const qtyColor = isSoldOut ? "var(--danger)" : "var(--success)";
+  ordersData.forEach(order => {
+    let statusClass = order.status === 'shipped' ? 'status-shipped' : 'status-paid';
+    let statusText = order.status === 'shipped' ? 'Versendet' : 'Bezahlt';
 
     el.innerHTML += `
-      <div class="sales-card">
-        ${t.image ? `<img src="${t.image}">` : `<div style="width:120px;height:120px;background:#334155;border-radius:10px;display:flex;align-items:center;justify-content:center;">Kein Bild</div>`}
-        <div class="sales-content">
-          <span class="tag">${t.category}</span>
-          <h3 style="margin: 5px 0;">${t.title}</h3>
-          <p style="margin: 5px 0; color: var(--text-muted);">${t.price} Pi</p>
-          <strong style="color: ${qtyColor};">${qtyText}</strong>
+      <div class="glass-panel" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
+          <strong>Order-ID: ${order.id.substring(0,8)}...</strong>
+          <span style="padding: 5px 10px; border-radius: 8px; font-weight:bold; ${order.status==='shipped'?'background:rgba(16,185,129,0.2);color:#34d399;':'background:rgba(59,130,246,0.2);color:#60a5fa;'}">${statusText}</span>
+        </div>
+        <h3>${order.ticket_title || 'Ticket'}</h3>
+        <p><strong>Käufer:</strong> ${order.buyer}</p>
+        <p><strong>Menge:</strong> ${order.quantity} | <strong>Preis:</strong> ${order.total_price} Pi</p>
+        <div style="margin-top: 15px;">
+          <a href="order.html?id=${order.id}" class="btn btn-primary" style="width: 100%;">📄 ${t('orderDetails')} & Chat</a>
         </div>
       </div>
     `;

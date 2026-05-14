@@ -62,6 +62,7 @@
     <button id="logoutBtn" class="btn btn-danger" style="display:none;" data-i18n="logout">🚪 Logout</button>
     <a href="create.html" class="btn btn-primary" data-i18n="createTicketBtn">➕ Ticket erstellen</a>
     <a href="favorites.html" class="btn btn-glass" data-i18n="favorites">❤️ Favoriten</a>
+    <a href="purchases.html" class="btn btn-glass" id="myPurchasesBtn" style="display:none;" data-i18n="myPurchases">💰 Meine Käufe</a>
     <a href="my-sales.html" class="btn btn-glass" id="mySalesBtn" style="display:none;" data-i18n="myTickets">🎫 Meine Verkäufe</a>
   </div>
 
@@ -72,10 +73,18 @@
       <option value="all">Alle Kategorien</option>
       <option value="Fußball">Fußball</option>
       <option value="Basketball">Basketball</option>
+      <option value="American Football">American Football</option>
+      <option value="Handball">Handball</option>
+      <option value="Rugby">Rugby</option>
+      <option value="Eishockey">Eishockey</option>
+      <option value="Tennis">Tennis</option>
+      <option value="Schwimmen">Schwimmen</option>
+      <option value="Wintersport">Wintersport</option>
       <option value="Motorsport">Motorsport</option>
       <option value="Olympia/Turnier">Olympia / Großturnier</option>
       <option value="Konzert">Konzert</option>
-      <option value="Theater/Musical">Theater / Musical</option>
+      <option value="Musical">Musical</option>
+      <option value="Theater/Comedy">Theater / Comedy</option>
       <option value="Sonstiges">Sonstiges</option>
     </select>
   </div>
@@ -96,17 +105,21 @@ function updateUI() {
   const logoutBtn = document.getElementById("logoutBtn");
   const mySalesBtn = document.getElementById("mySalesBtn");
 
+  const myPurchasesBtn = document.getElementById("myPurchasesBtn");
+
   if (currentUser) {
     userEl.innerText = "👤 " + currentUser;
     loginBtn.style.display = "none";
     logoutBtn.style.display = "inline-flex";
     mySalesBtn.style.display = "inline-flex";
+    myPurchasesBtn.style.display = "inline-flex";
     loadFavorites();
   } else {
     userEl.innerText = "";
     loginBtn.style.display = "inline-flex";
     logoutBtn.style.display = "none";
     mySalesBtn.style.display = "none";
+    myPurchasesBtn.style.display = "none";
   }
 
   // Active language button
