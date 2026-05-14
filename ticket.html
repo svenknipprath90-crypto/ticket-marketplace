@@ -117,24 +117,48 @@ async function loadTicket() {
 // ================= UI =================
 function render(t) {
 
-  const fee = (t.price * 0.1).toFixed(2);
-  const total = (parseFloat(t.price) + parseFloat(fee)).toFixed(2);
+  const maxQty = t.quantity || 1;
+
+  window.updatePrice = function() {
+    const inputEl = document.getElementById('buyQuantity');
+    let qty = parseInt(inputEl.value) || 1;
+    
+    // Validate quantity bounds
+    if (qty > maxQty) { qty = maxQty; inputEl.value = maxQty; }
+    if (qty < 1) { qty = 1; inputEl.value = 1; }
+
+    const basePrice = parseFloat(t.price);
+    const fee = (basePrice * qty * 0.1).toFixed(2);
+    const total = (basePrice * qty + parseFloat(fee)).toFixed(2);
+
+    document.getElementById('priceDisplay').innerHTML = `
+      <h3>${(basePrice * qty).toFixed(2)} Pi (für ${qty} Ticket/s)</h3>
+      <p>Service Fee: ${fee} Pi</p>
+      <h2>Gesamt: ${total} Pi</h2>
+      <button class="button" onclick="buy(${total}, ${qty})">💸 Jetzt kaufen</button>
+    `;
+  };
 
   document.getElementById("content").innerHTML = `
     ${t.image ? `<img src="${t.image}">` : ""}
     <h2>${t.title}</h2>
     <p>Kategorie: ${t.category}</p>
     <p>${t.location || ''}</p>
-    <p style="color: #22c55e; font-weight: bold;">📦 Noch ${t.quantity || 1} verfügbar</p>
-    <h3>${t.price} Pi</h3>
-    <p>Service Fee: ${fee} Pi</p>
-    <h2>Gesamt: ${total} Pi</h2>
-    <button class="button" onclick="buy(${total})">💸 Jetzt kaufen</button>
+    <p style="color: #22c55e; font-weight: bold;">📦 Noch ${maxQty} verfügbar</p>
+    
+    <div style="margin: 15px 0; background: #1e293b; padding: 15px; border-radius: 10px;">
+      <label style="font-weight: bold;">Wie viele Tickets möchtest du kaufen?</label><br>
+      <input type="number" id="buyQuantity" min="1" max="${maxQty}" value="1" onchange="updatePrice()" onkeyup="updatePrice()" style="width:100%; padding:10px; font-size:16px; margin-top:10px; border-radius: 8px; border: none;">
+    </div>
+    
+    <div id="priceDisplay"></div>
   `;
+  
+  updatePrice();
 }
 
 // ================= PAYMENT =================
-async function buy(amount) {
+async function buy(amount, selectedQuantity) {
 
   if (!currentUser) {
     alert("Nicht eingeloggt");
@@ -147,8 +171,8 @@ async function buy(amount) {
 
     await Pi.createPayment({
       amount: amount,
-      memo: "Ticket Kauf",
-      metadata: { ticketId: ticketId }
+      memo: selectedQuantity + "x Ticket Kauf",
+      metadata: { ticketId: ticketId, quantity: selectedQuantity }
     }, {
 
       // 🔥 APPROVE
@@ -195,15 +219,27 @@ async function buy(amount) {
 
         // --- UPDATE QUANTITY IN DATABASE ---
         if (currentTicket) {
-          let newQuantity = (currentTicket.quantity || 1) - 1;
+          let newQuantity = (currentTicket.quantity || 1) - selectedQuantity;
           
+          let dbError = null;
           if (newQuantity <= 0) {
             // Delete ticket completely if sold out
-            await db.from("tickets").delete().eq("id", ticketId);
+            const res = await db.from("tickets").delete().eq("id", ticketId);
+            dbError = res.error;
           } else {
             // Update quantity
-            await db.from("tickets").update({ quantity: newQuantity }).eq("id", ticketId);
+            const res = await db.from("tickets").update({ quantity: newQuantity }).eq("id", ticketId);
+            dbError = res.error;
           }
+
+          if (dbError) {
+             console.error("Supabase RLS Error:", dbError);
+             alert("Zahlung war erfolgreich, ABER die Anzahl konnte nicht in der Datenbank reduziert werden. Grund: Fehlende Datenbank-Berechtigungen (Supabase RLS).");
+          } else {
+             alert("✅ Zahlung erfolgreich & Anzahl aktualisiert!");
+          }
+        } else {
+             alert("✅ Zahlung erfolgreich");
         }
 
         // Add to purchases
@@ -213,8 +249,6 @@ async function buy(amount) {
           localStorage.setItem("purchases", JSON.stringify(purchases));
         }
 
-        alert("✅ Zahlung erfolgreich");
-        
         // Reload ticket data to show updated quantity, or redirect
         window.location.href = "index.html";
       },
