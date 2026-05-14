@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Verkäufer Profil</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <link rel="stylesheet" href="style.css">
+  <script src="i18n.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <button onclick="window.history.back()" class="btn btn-glass" data-i18n="back">⬅ Zurück</button>
+    <div class="lang-toggle">
+      <button class="lang-btn" id="lang-de" onclick="setLanguage('de'); window.location.reload();">🇩🇪</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en'); window.location.reload();">🇬🇧</button>
+    </div>
+  </div>
+
+  <div class="glass-panel" style="text-align: center; margin-bottom: 30px;">
+    <h1 id="profileName" style="margin-top:0;">👤 Laden...</h1>
+    <h2 id="profileRating" style="color: #fbbf24;">⭐️ ...</h2>
+    <p data-i18n="sellerProfile" style="color: var(--text-muted);">Verkäufer Profil</p>
+  </div>
+
+  <h2 data-i18n="activeTickets" style="border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">Aktive Tickets</h2>
+  
+  <div id="tickets" class="tickets-grid">
+    <div style="text-align: center; width: 100%;">Lade... / Loading...</div>
+  </div>
+
+</div>
+
+<script>
+  let currentUser = localStorage.getItem("pi_user") || null;
+  const params = new URLSearchParams(window.location.search);
+  const sellerName = params.get("user");
+
+  const db = window.supabase.createClient(
+    "https://rucejmhjgfvlntoxhczm.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
+  );
+
+  let favorites = [];
+
+  document.addEventListener("DOMContentLoaded", () => {
+    try {
+      document.getElementById("lang-de").classList.toggle("active", currentLang === "de");
+      document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+    } catch(e) {}
+
+    if (!sellerName) {
+      window.location.href = "index.html";
+      return;
+    }
+
+    document.getElementById("profileName").innerText = "👤 " + sellerName;
+    loadProfile();
+  });
+
+  async function loadProfile() {
+    // Load Favorites
+    if (currentUser) {
+      const { data: favs } = await db.from("favorites").select("*").eq("user_id", currentUser);
+      if (favs) favorites = favs.map(f => f.ticket_id);
+    }
+
+    // Load Rating
+    const { data: ratingsData } = await db.from("ratings").select("rating").eq("seller", sellerName);
+    if (ratingsData && ratingsData.length > 0) {
+      let sum = 0;
+      ratingsData.forEach(r => sum += r.rating);
+      let avg = (sum / ratingsData.length).toFixed(1);
+      document.getElementById("profileRating").innerText = `⭐️ ${avg} / 5 (${ratingsData.length} Bewertungen)`;
+    } else {
+      document.getElementById("profileRating").innerText = `⭐️ Keine Bewertungen`;
+    }
+
+    // Load Tickets
+    const { data: ticketsData } = await db
+      .from("tickets")
+      .select("*")
+      .eq("seller", sellerName)
+      .gt("quantity", 0)
+      .order("created_at", { ascending: false });
+
+    const el = document.getElementById("tickets");
+    el.innerHTML = "";
+
+    if (!ticketsData || ticketsData.length === 0) {
+      el.innerHTML = `<div class="glass-panel" style="text-align:center; width: 100%;"><p>${t('noTickets')}</p></div>`;
+      return;
+    }
+
+    ticketsData.forEach(tick => {
+      const isFav = favorites.includes(tick.id);
+      const availableText = t("available", { n: tick.quantity || 1 });
+
+      el.innerHTML += `
+        <div class="card" onclick="window.location.href='ticket.html?id=${tick.id}'" style="cursor:pointer;">
+          ${tick.image ? `<img src="${tick.image}">` : ""}
+          <div class="card-content">
+            <div class="tag">${tick.category}</div>
+            <h3 class="card-title">${tick.title}</h3>
+            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">${tick.description.substring(0, 50)}...</p>
+            <p style="color: var(--success); font-weight: bold; font-size: 14px; margin-bottom: 5px;">📦 ${availableText}</p>
+            
+            <div class="card-footer">
+              <span class="price">${tick.price} Pi</span>
+              <span class="heart" onclick="toggleFavorite(${tick.id}, event)">
+                ${isFav ? "❤️" : "🤍"}
+              </span>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  async function toggleFavorite(ticketId, event) {
+    event.stopPropagation();
+    if (!currentUser) {
+      alert(t("notLoggedIn"));
+      return;
+    }
+    const exists = favorites.includes(ticketId);
+    if (exists) {
+      await db.from("favorites").delete().eq("user_id", currentUser).eq("ticket_id", ticketId);
+    } else {
+      await db.from("favorites").insert({ user_id: currentUser, ticket_id: ticketId });
+    }
+    loadProfile();
+  }
+</script>
+
+</body>
+</html>

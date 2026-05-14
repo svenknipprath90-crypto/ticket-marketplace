@@ -43,7 +43,16 @@ const translations = {
     purchasesDesc: "Hier siehst du alle deine bezahlten Bestellungen. Klicke auf 'Bestelldetails & Chat', um die Versandadresse einzugeben oder mit dem Verkäufer zu schreiben.",
     salesDesc: "Hier siehst du alle Tickets, die du erstellt hast, sowie deren Restbestand.",
     favDesc: "Hier siehst du alle Tickets, die du als Favorit gespeichert hast.",
-    noFavsHere: "Du hast noch keine Favoriten gespeichert."
+    noFavsHere: "Du hast noch keine Favoriten gespeichert.",
+    searchPlaceholder: "Suche nach Event, Liga...",
+    edit: "✏️ Bearbeiten",
+    delete: "🗑️ Löschen",
+    deleteConfirm: "Möchtest du dieses Ticket wirklich endgültig löschen?",
+    editTitle: "Ticket bearbeiten",
+    sellerProfile: "Verkäufer Profil",
+    avgRating: "Ø Bewertung",
+    activeTickets: "Aktive Tickets",
+    noTickets: "Dieser Verkäufer hat aktuell keine Tickets."
   },
   en: {
     title: "🎟️ Pi Ticket Marketplace",
@@ -89,7 +98,16 @@ const translations = {
     purchasesDesc: "Here you can see all your paid orders. Click on 'Order Details & Chat' to enter your shipping address or write to the seller.",
     salesDesc: "Here you can see all tickets you have created and their remaining stock.",
     favDesc: "Here you can see all tickets you have saved as favorites.",
-    noFavsHere: "You haven't saved any favorites yet."
+    noFavsHere: "You haven't saved any favorites yet.",
+    searchPlaceholder: "Search for event, league...",
+    edit: "✏️ Edit",
+    delete: "🗑️ Delete",
+    deleteConfirm: "Do you really want to permanently delete this ticket?",
+    editTitle: "Edit Ticket",
+    sellerProfile: "Seller Profile",
+    avgRating: "Avg. Rating",
+    activeTickets: "Active Tickets",
+    noTickets: "This seller has no active tickets right now."
   }
 };
 

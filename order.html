@@ -114,7 +114,7 @@ function renderOrder() {
     <div class="section-card">
       <h3>${currentOrder.ticket_title}</h3>
       <p><strong>Order ID:</strong> ${currentOrder.id}</p>
-      <p><strong>Käufer:</strong> ${currentOrder.buyer} | <strong>Verkäufer:</strong> ${currentOrder.seller}</p>
+      <p><strong>Käufer:</strong> <a href="profile.html?user=${encodeURIComponent(currentOrder.buyer)}" style="color:var(--primary); text-decoration:none;">${currentOrder.buyer}</a> | <strong>Verkäufer:</strong> <a href="profile.html?user=${encodeURIComponent(currentOrder.seller)}" style="color:var(--primary); text-decoration:none;">${currentOrder.seller}</a></p>
       <p><strong>Menge:</strong> ${currentOrder.quantity} | <strong>Preis:</strong> ${currentOrder.total_price} Pi</p>
       <p><strong>Status:</strong> ${currentOrder.status === 'shipped' ? '📦 Versendet' : '✅ Bezahlt'}</p>
     </div>

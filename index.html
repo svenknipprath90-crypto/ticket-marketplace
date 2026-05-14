@@ -61,31 +61,41 @@
     <button id="logoutBtn" class="btn btn-danger" style="display:none;" data-i18n="logout">🚪 Logout</button>
     <a href="create2.html" class="btn btn-primary" data-i18n="createTicketBtn">➕ Ticket erstellen</a>
     <a href="favorites.html?v=3" class="btn btn-glass" data-i18n="favorites">❤️ Favoriten</a>
-    <a href="purchases.html?v=3" class="btn btn-glass" id="myPurchasesBtn" style="display:none;" data-i18n="myPurchases">💰 Meine Käufe</a>
-    <a href="my-sales.html?v=3" class="btn btn-glass" id="mySalesBtn" style="display:none;" data-i18n="myTickets">🎫 Meine Verkäufe</a>
+    <a href="purchases.html?v=3" class="btn btn-glass" id="myPurchasesBtn" style="display:none; position:relative;" data-i18n="myPurchases">
+      💰 Meine Käufe
+      <span id="purchasesDot" style="display:none; position:absolute; top:-5px; right:-5px; width:12px; height:12px; background:red; border-radius:50%; box-shadow:0 0 5px red;"></span>
+    </a>
+    <a href="my-sales.html?v=3" class="btn btn-glass" id="mySalesBtn" style="display:none; position:relative;" data-i18n="myTickets">
+      🎫 Meine Verkäufe
+      <span id="salesDot" style="display:none; position:absolute; top:-5px; right:-5px; width:12px; height:12px; background:red; border-radius:50%; box-shadow:0 0 5px red;"></span>
+    </a>
   </div>
 
   <!-- FILTER -->
-  <div class="filter-bar">
-    <strong data-i18n="category">Kategorie:</strong>
-    <select id="categoryFilter" class="category-select" onchange="filterTickets()">
-      <option value="all">Alle Kategorien</option>
-      <option value="Fußball">Fußball</option>
-      <option value="Basketball">Basketball</option>
-      <option value="American Football">American Football</option>
-      <option value="Handball">Handball</option>
-      <option value="Rugby">Rugby</option>
-      <option value="Eishockey">Eishockey</option>
-      <option value="Tennis">Tennis</option>
-      <option value="Schwimmen">Schwimmen</option>
-      <option value="Wintersport">Wintersport</option>
-      <option value="Motorsport">Motorsport</option>
-      <option value="Olympia/Turnier">Olympia / Großturnier</option>
-      <option value="Konzert">Konzert</option>
-      <option value="Musical">Musical</option>
-      <option value="Theater/Comedy">Theater / Comedy</option>
-      <option value="Sonstiges">Sonstiges</option>
-    </select>
+  <div class="filter-bar" style="flex-wrap: wrap; gap: 10px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <strong data-i18n="category">Kategorie:</strong>
+      <select id="categoryFilter" class="category-select" onchange="filterTickets()">
+        <option value="all">Alle Kategorien</option>
+        <option value="Fußball">Fußball</option>
+        <option value="Basketball">Basketball</option>
+        <option value="American Football">American Football</option>
+        <option value="Handball">Handball</option>
+        <option value="Rugby">Rugby</option>
+        <option value="Eishockey">Eishockey</option>
+        <option value="Tennis">Tennis</option>
+        <option value="Schwimmen">Schwimmen</option>
+        <option value="Wintersport">Wintersport</option>
+        <option value="Motorsport">Motorsport</option>
+        <option value="Olympia/Turnier">Olympia / Großturnier</option>
+        <option value="Konzert">Konzert</option>
+        <option value="Musical">Musical</option>
+        <option value="Theater/Comedy">Theater / Comedy</option>
+        <option value="Sonstiges">Sonstiges</option>
+      </select>
+    </div>
+    
+    <input type="text" id="searchInput" data-i18n="searchPlaceholder" placeholder="Suche..." onkeyup="filterTickets()" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; flex-grow: 1; max-width: 300px;">
   </div>
 
   <!-- TICKETS GRID -->
@@ -113,6 +123,7 @@ function updateUI() {
     mySalesBtn.style.display = "inline-flex";
     myPurchasesBtn.style.display = "inline-flex";
     loadFavorites();
+    checkNotifications();
   } else {
     userEl.innerText = "";
     loginBtn.style.display = "inline-flex";
@@ -219,16 +230,44 @@ function filterTickets() {
   render();
 }
 
+// ================= NOTIFICATIONS =================
+async function checkNotifications() {
+  if(!currentUser) return;
+  
+  // Check if seller has paid orders (needs shipping)
+  const { data: salesInfo } = await db.from("orders").select("id").eq("seller", currentUser).eq("status", "paid");
+  if(salesInfo && salesInfo.length > 0) {
+    document.getElementById("salesDot").style.display = "block";
+  } else {
+    document.getElementById("salesDot").style.display = "none";
+  }
+
+  // Check if buyer has shipped orders (needs rating/confirmation)
+  const { data: purchaseInfo } = await db.from("orders").select("id").eq("buyer", currentUser).eq("status", "shipped");
+  if(purchaseInfo && purchaseInfo.length > 0) {
+    document.getElementById("purchasesDot").style.display = "block";
+  } else {
+    document.getElementById("purchasesDot").style.display = "none";
+  }
+}
+
 // ================= RENDER =================
 function render() {
   const el = document.getElementById("tickets");
   el.innerHTML = "";
   
   const selectedCategory = document.getElementById("categoryFilter").value;
+  const searchTerm = document.getElementById("searchInput").value.toLowerCase();
 
   ticketsData.forEach(tick => {
     if (tick.quantity <= 0) return;
     if (selectedCategory !== "all" && tick.category !== selectedCategory) return;
+    
+    if (searchTerm) {
+      const matchTitle = tick.title && tick.title.toLowerCase().includes(searchTerm);
+      const matchLoc = tick.location && tick.location.toLowerCase().includes(searchTerm);
+      if(!matchTitle && !matchLoc) return;
+    }
 
     const isFav = favorites.includes(tick.id);
     const availableText = t("available", { n: tick.quantity || 1 });
