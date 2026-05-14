@@ -118,12 +118,34 @@ function updateUI() {
   }
 }
 
+// PI INIT (Globale Initialisierung)
+Pi.init({ version: "2.0", sandbox: true });
+
+const onIncompletePaymentFound = async (payment) => {
+  console.log("Incomplete payment found:", payment);
+  try {
+    if (payment.transaction && payment.transaction.txid) {
+      await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete", paymentId: payment.identifier, txid: payment.transaction.txid })
+      });
+    } else {
+      await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve", paymentId: payment.identifier })
+      });
+    }
+  } catch (e) {
+    console.error("Error handling incomplete payment:", e);
+  }
+};
+
 // LOGIN
 async function loginPi() {
   try {
-    Pi.init({ version: "2.0", sandbox: true });
-
-    const auth = await Pi.authenticate(['username'], () => {});
+    const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
     currentUser = auth.user.username;
 
     localStorage.setItem("pi_user", currentUser);

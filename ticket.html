@@ -52,15 +52,44 @@ img {
 
 <script>
 
-// ================= PI INIT =================
+// ================= PI INIT & LOGIN =================
 Pi.init({ version: "2.0", sandbox: true });
 
-// ================= LOGIN =================
 let currentUser = null;
+
+const onIncompletePaymentFound = async (payment) => {
+  console.log("Incomplete payment found:", payment);
+  try {
+    // If there is a txid, we should complete the payment
+    if (payment.transaction && payment.transaction.txid) {
+      await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "complete",
+          paymentId: payment.identifier,
+          txid: payment.transaction.txid
+        })
+      });
+    } else {
+      // Otherwise try to approve it
+      await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "approve",
+          paymentId: payment.identifier
+        })
+      });
+    }
+  } catch (e) {
+    console.error("Error handling incomplete payment:", e);
+  }
+};
 
 async function login() {
   try {
-    const auth = await Pi.authenticate(["payments", "username"]);
+    const auth = await Pi.authenticate(["payments", "username"], onIncompletePaymentFound);
     currentUser = auth.user.username;
     localStorage.setItem("pi_user", currentUser);
     console.log("User:", currentUser);
@@ -171,6 +200,13 @@ async function buy(amount) {
 
         if (!data.success) {
           throw new Error("Complete fehlgeschlagen");
+        }
+
+        // Add to purchases
+        let purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
+        if (!purchases.includes(ticketId)) {
+          purchases.push(ticketId);
+          localStorage.setItem("purchases", JSON.stringify(purchases));
         }
 
         alert("✅ Zahlung erfolgreich");

@@ -53,13 +53,16 @@
           imageUrl = `https://rucejmhjgfvlntoxhczm.supabase.co/storage/v1/object/public/tickets/${fileName}`;
         }
 
+        const currentUser = localStorage.getItem("pi_user") || "Unknown";
+
         const { error } = await supabase.from("tickets").insert([
           {
             title: title,
             category: category,
             price: Number(price),
             description: description,
-            image: imageUrl
+            image: imageUrl,
+            seller: currentUser
           }
         ]);
 
