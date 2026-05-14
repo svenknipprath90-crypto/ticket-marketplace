@@ -80,7 +80,17 @@ const translations = {
     cat_theater: "🎬 Theater/Comedy",
     cat_olympics: "🏆 Turnier",
     cat_travel: "🚌 Reise/Gutschein",
-    cat_other: "🎫 Sonstiges"
+    cat_other: "🎫 Sonstiges",
+    reportTicket: "🚩 Ticket melden",
+    reportReason: "Warum möchtest du dieses Ticket melden?",
+    reportSuccess: "Ticket wurde gemeldet. Danke!",
+    qnaTitle: "💬 Fragen & Antworten",
+    askPlaceholder: "Hast du eine Frage zum Ticket?",
+    askBtn: "Frage senden",
+    sellerBadge: "Verkäufer",
+    requestPayout: "💰 Auszahlung anfordern",
+    payoutRequested: "⏳ Auszahlung angefragt",
+    payoutDone: "✅ Ausgezahlt"
   },
   en: {
     title: "🎟️ Pi Ticket Marketplace",
@@ -163,7 +173,17 @@ const translations = {
     cat_theater: "🎬 Theater/Comedy",
     cat_olympics: "🏆 Tournament",
     cat_travel: "🚌 Travel/Voucher",
-    cat_other: "🎫 Other"
+    cat_other: "🎫 Other",
+    reportTicket: "🚩 Report Ticket",
+    reportReason: "Why do you want to report this ticket?",
+    reportSuccess: "Ticket has been reported. Thank you!",
+    qnaTitle: "💬 Questions & Answers",
+    askPlaceholder: "Do you have a question about this ticket?",
+    askBtn: "Send Question",
+    sellerBadge: "Seller",
+    requestPayout: "💰 Request Payout",
+    payoutRequested: "⏳ Payout Requested",
+    payoutDone: "✅ Paid Out"
   }
 };
 

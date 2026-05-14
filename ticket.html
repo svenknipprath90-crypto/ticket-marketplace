@@ -210,11 +210,81 @@ async function render(tData, isVerified) {
       <div id="priceDisplay"></div>
     </div>
     ` : ''}
+
+    <div style="margin-top: 30px; border-top: 1px solid var(--glass-border); padding-top: 20px;">
+      <h2 data-i18n="qnaTitle" style="margin-bottom: 15px;">💬 Fragen & Antworten</h2>
+      <div id="qnaList" style="margin-bottom: 15px;">
+        <div style="text-align:center; color: var(--text-muted); font-size:14px;">Lade...</div>
+      </div>
+      ${currentUser ? `
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="qnaInput" data-i18n="askPlaceholder" placeholder="Frage stellen..." style="flex:1;">
+          <button class="btn btn-primary" onclick="postComment()"><span data-i18n="askBtn">Senden</span></button>
+        </div>
+      ` : `<div style="text-align:center; color: var(--text-muted); font-size:14px;">Bitte einloggen, um eine Frage zu stellen.</div>`}
+    </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+      <button class="btn btn-glass" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.3); font-size: 14px;" onclick="reportTicket()">
+        <span data-i18n="reportTicket">🚩 Ticket melden</span>
+      </button>
+    </div>
   `;
   
   if(!isSoldOut) updatePrice();
+  
+  loadComments();
+  setTimeout(applyTranslations, 100);
 }
 
+// ================= Q&A =================
+async function loadComments() {
+  const { data, error } = await db.from("comments").select("*").eq("ticket_id", ticketId).order("created_at", { ascending: true });
+  const qnaList = document.getElementById("qnaList");
+  if(!qnaList) return;
+  qnaList.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    qnaList.innerHTML = `<div style="text-align:center; color: var(--text-muted); font-size:14px;">Noch keine Fragen. / No questions yet.</div>`;
+    return;
+  }
+
+  data.forEach(c => {
+    const isSeller = c.user_id === currentTicket.seller;
+    const badge = isSeller ? `<span style="background:var(--primary); color:white; padding:2px 6px; border-radius:5px; font-size:10px; margin-left:5px;" data-i18n="sellerBadge">Verkäufer</span>` : "";
+    
+    qnaList.innerHTML += `
+      <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 10px; margin-bottom: 10px; border-left: 3px solid ${isSeller ? 'var(--primary)' : 'transparent'};">
+        <strong style="color:var(--text-main); font-size:14px;">👤 ${c.user_id} ${badge}</strong>
+        <p style="margin: 5px 0 0 0; color:var(--text-muted); font-size:14px;">${c.text}</p>
+      </div>
+    `;
+  });
+  applyTranslations();
+}
+
+async function postComment() {
+  const input = document.getElementById("qnaInput");
+  const text = input.value.trim();
+  if(!text || !currentUser) return;
+
+  await db.from("comments").insert({ ticket_id: ticketId, user_id: currentUser, text: text });
+  input.value = "";
+  loadComments();
+}
+
+// ================= REPORT TICKET =================
+async function reportTicket() {
+  if(!currentUser) {
+    alert(t("notLoggedIn"));
+    return;
+  }
+  const reason = prompt(t("reportReason"));
+  if(reason) {
+    await db.from("reports").insert({ ticket_id: ticketId, reporter_user: currentUser, reason: reason });
+    alert(t("reportSuccess"));
+  }
+}
 // ================= SHARE TICKET =================
 async function shareTicket() {
   const url = window.location.href;

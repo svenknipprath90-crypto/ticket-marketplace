@@ -73,6 +73,16 @@
     </div>
   </div>
 
+  <div class="glass-panel" style="margin-bottom: 30px;">
+    <h2 style="margin-top: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">🚨 Gemeldete Tickets</h2>
+    <div id="adminReportsList">Lade...</div>
+  </div>
+
+  <div class="glass-panel" style="margin-bottom: 30px;">
+    <h2 style="margin-top: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">💰 Auszahlungs-Anfragen (Treuhand)</h2>
+    <div id="adminPayoutsList">Lade...</div>
+  </div>
+
   <div class="glass-panel">
     <h2 style="margin-top: 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">Moderation: Alle Tickets</h2>
     <div style="overflow-x: auto;">
@@ -173,6 +183,44 @@
     } else {
       document.getElementById("adminTicketList").innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Fehler beim Laden der Tickets.</td></tr>';
     }
+
+    // 3. Fetch Reports
+    const { data: reportsData } = await db.from("reports").select("*, tickets(title, seller)").order("created_at", { ascending: false });
+    const reportsEl = document.getElementById("adminReportsList");
+    if (!reportsData || reportsData.length === 0) {
+      reportsEl.innerHTML = "<p>Keine Meldungen.</p>";
+    } else {
+      let html = "";
+      reportsData.forEach(r => {
+        html += `<div style="background:rgba(239,68,68,0.2); padding:10px; margin-bottom:10px; border-radius:10px;">
+          <strong>Ticket:</strong> <a href="ticket.html?id=${r.ticket_id}" style="color:var(--primary);">${r.tickets ? r.tickets.title : 'Unbekannt'}</a><br>
+          <strong>Gemeldet von:</strong> ${r.reporter_user} <br>
+          <strong>Grund:</strong> ${r.reason} <br>
+          <button onclick="adminDeleteTicket(${r.ticket_id}, 'Gemeldetes Ticket')" class="btn btn-danger" style="margin-top:5px; padding:5px 10px; font-size:12px;">🗑️ Ticket löschen</button>
+          <button onclick="adminDeleteReport(${r.id})" class="btn btn-glass" style="margin-top:5px; padding:5px 10px; font-size:12px;">✅ Meldung ignorieren</button>
+        </div>`;
+      });
+      reportsEl.innerHTML = html;
+    }
+
+    // 4. Fetch Payouts
+    const { data: payoutsData } = await db.from("orders").select("*").eq("payout_status", "requested").order("created_at", { ascending: false });
+    const payoutsEl = document.getElementById("adminPayoutsList");
+    if (!payoutsData || payoutsData.length === 0) {
+      payoutsEl.innerHTML = "<p>Keine offenen Auszahlungen.</p>";
+    } else {
+      let html = "";
+      payoutsData.forEach(p => {
+        html += `<div style="background:rgba(251,191,36,0.2); padding:10px; margin-bottom:10px; border-radius:10px;">
+          <strong>Order-ID:</strong> ${p.id}<br>
+          <strong>Ticket:</strong> ${p.ticket_title}<br>
+          <strong>Verkäufer (Empfänger):</strong> ${p.seller} <br>
+          <strong>Betrag:</strong> ${p.total_price} Pi <br>
+          <button onclick="markPayoutDone('${p.id}')" class="btn btn-success" style="margin-top:5px; padding:5px 10px; font-size:12px;">✅ Als Ausgezahlt markieren</button>
+        </div>`;
+      });
+      payoutsEl.innerHTML = html;
+    }
   }
 
   // ================= VERIFICATION ACTION =================
@@ -197,6 +245,18 @@
         alert("Ticket erfolgreich als Moderator gelöscht.");
         loadAdminData(); // Refresh table
       }
+    }
+  }
+
+  async function adminDeleteReport(reportId) {
+    await db.from("reports").delete().eq("id", reportId);
+    loadAdminData();
+  }
+
+  async function markPayoutDone(orderId) {
+    if(confirm("Hast du dem Verkäufer die Pi über deine Pi Wallet gesendet?")) {
+      await db.from("orders").update({ payout_status: 'paid' }).eq("id", orderId);
+      loadAdminData();
     }
   }
 </script>

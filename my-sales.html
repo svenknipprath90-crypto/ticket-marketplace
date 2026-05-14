@@ -134,6 +134,16 @@ async function loadSales() {
     let statusClass = order.status === 'shipped' ? 'status-shipped' : 'status-paid';
     let statusText = order.status === 'shipped' ? 'Versendet' : 'Bezahlt';
 
+    let payoutHtml = '';
+    const pStatus = order.payout_status || 'pending';
+    if (pStatus === 'pending') {
+      payoutHtml = `<button onclick="requestPayout('${order.id}')" class="btn btn-glass" style="margin-top:10px; width:100%; border:1px solid #fbbf24; color:#fbbf24;" data-i18n="requestPayout">💰 Auszahlung anfordern</button>`;
+    } else if (pStatus === 'requested') {
+      payoutHtml = `<div style="margin-top:10px; text-align:center; padding:10px; border-radius:10px; background:rgba(251,191,36,0.2); color:#fcd34d;" data-i18n="payoutRequested">⏳ Auszahlung angefragt</div>`;
+    } else if (pStatus === 'paid') {
+      payoutHtml = `<div style="margin-top:10px; text-align:center; padding:10px; border-radius:10px; background:rgba(16,185,129,0.2); color:#6ee7b7;" data-i18n="payoutDone">✅ Ausgezahlt</div>`;
+    }
+
     el.innerHTML += `
       <div class="glass-panel" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
@@ -146,9 +156,20 @@ async function loadSales() {
         <div style="margin-top: 15px;">
           <a href="order.html?id=${order.id}" class="btn btn-primary" style="width: 100%;">📄 ${t('orderDetails')} & Chat</a>
         </div>
+        ${payoutHtml}
       </div>
     `;
   });
+  
+  setTimeout(applyTranslations, 100);
+}
+
+// ================= PAYOUT REQUEST =================
+async function requestPayout(orderId) {
+  if(confirm("Möchtest du die Auszahlung für diese Bestellung anfordern? / Request payout for this order?")) {
+    await db.from("orders").update({ payout_status: 'requested' }).eq("id", orderId);
+    loadSales();
+  }
 }
 
 // ================= DELETE LOGIC =================
