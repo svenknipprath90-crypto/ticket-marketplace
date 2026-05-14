@@ -93,22 +93,22 @@ async function loadSales() {
 
   if (ticketsData && ticketsData.length > 0) {
     el.innerHTML += `<h2 style="margin-top: 30px;">Dein Ticket-Bestand</h2>`;
-    ticketsData.forEach(t => {
-      const isSoldOut = t.quantity <= 0;
-      const qtyText = isSoldOut ? "❌ Ausverkauft" : `📦 Restbestand: ${t.quantity}`;
+    ticketsData.forEach(ticket => {
+      const isSoldOut = ticket.quantity <= 0;
+      const qtyText = isSoldOut ? "❌ Ausverkauft" : `📦 Restbestand: ${ticket.quantity}`;
       const qtyColor = isSoldOut ? "var(--danger)" : "var(--success)";
 
       el.innerHTML += `
         <div class="sales-card">
-          ${t.image ? `<img src="${t.image}">` : `<div style="width:120px;height:120px;background:#334155;border-radius:10px;display:flex;align-items:center;justify-content:center;">Kein Bild</div>`}
+          ${ticket.image ? `<img src="${ticket.image}">` : `<div style="width:120px;height:120px;background:#334155;border-radius:10px;display:flex;align-items:center;justify-content:center;">Kein Bild</div>`}
           <div class="sales-content">
-            <span class="tag">${t.category}</span>
-            <h3 style="margin: 5px 0;">${t.title}</h3>
-            <p style="margin: 5px 0; color: var(--text-muted);">${t.price} Pi</p>
+            <span class="tag">${ticket.category}</span>
+            <h3 style="margin: 5px 0;">${ticket.title}</h3>
+            <p style="margin: 5px 0; color: var(--text-muted);">${ticket.price} Pi</p>
             <strong style="color: ${qtyColor};">${qtyText}</strong>
             <div style="margin-top: 10px; display:flex; gap:10px;">
-              <button onclick="window.location.href='edit.html?id=${t.id}'" class="btn btn-primary" style="padding: 5px 10px; font-size: 14px;">${t('edit')}</button>
-              <button onclick="deleteTicket(${t.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 14px;">${t('delete')}</button>
+              <button onclick="window.location.href='edit.html?id=${ticket.id}'" class="btn btn-primary" style="padding: 5px 10px; font-size: 14px;">${t('edit')}</button>
+              <button onclick="deleteTicket(${ticket.id})" class="btn btn-danger" style="padding: 5px 10px; font-size: 14px;">${t('delete')}</button>
             </div>
           </div>
         </div>
