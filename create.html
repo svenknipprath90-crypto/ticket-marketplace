@@ -67,7 +67,7 @@
       <input type="file" id="image" accept="image/*">
     </div>
 
-    <button id="createBtn" class="btn btn-success" style="width: 100%; font-size: 18px;" data-i18n="saveBtn">
+    <button id="createBtn" class="btn btn-success" style="width: 100%; font-size: 18px;" data-i18n="saveBtn" onclick="createTicket()">
       Ticket speichern
     </button>
   </div>
@@ -84,7 +84,7 @@
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
   );
 
-  document.getElementById("createBtn").onclick = async function () {
+  async function createTicket() {
     alert("Button Klick registriert! Starte Verarbeitung...");
     try {
       const title = document.getElementById("title").value.trim();
@@ -155,8 +155,9 @@
       document.getElementById("createBtn").innerText = t("saveBtn");
       document.getElementById("createBtn").disabled = false;
     }
-  };
+  }
 </script>
 
 </body>
 </html>
+
