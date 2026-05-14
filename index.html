@@ -252,6 +252,9 @@ function render() {
 
   ticketsData.forEach(t => {
 
+    // Only show tickets that have more than 0 quantity
+    if (t.quantity <= 0) return;
+
     const isFav = favorites.includes(t.id);
 
     el.innerHTML += `
@@ -262,7 +265,8 @@ function render() {
           <p>${t.category}</p>
           <p>${t.description}</p>
           <strong>${t.price} Pi</strong>
-          <br><br>
+          <p style="color: #22c55e; font-size: 14px;">📦 Noch ${t.quantity || 1} verfügbar</p>
+          <br>
 
           <span class="heart" onclick="toggleFavorite(${t.id}, event)">
             ${isFav ? "❤️" : "🤍"}

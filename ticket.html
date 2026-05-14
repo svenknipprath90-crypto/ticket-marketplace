@@ -94,6 +94,7 @@ const db = window.supabase.createClient(
 );
 
 // ================= LOAD TICKET =================
+let currentTicket = null;
 const params = new URLSearchParams(window.location.search);
 const ticketId = params.get("id");
 
@@ -109,6 +110,7 @@ async function loadTicket() {
     return;
   }
 
+  currentTicket = data;
   render(data);
 }
 
@@ -122,7 +124,8 @@ function render(t) {
     ${t.image ? `<img src="${t.image}">` : ""}
     <h2>${t.title}</h2>
     <p>Kategorie: ${t.category}</p>
-    <p>${t.location}</p>
+    <p>${t.location || ''}</p>
+    <p style="color: #22c55e; font-weight: bold;">📦 Noch ${t.quantity || 1} verfügbar</p>
     <h3>${t.price} Pi</h3>
     <p>Service Fee: ${fee} Pi</p>
     <h2>Gesamt: ${total} Pi</h2>
@@ -190,6 +193,19 @@ async function buy(amount) {
           throw new Error("Complete fehlgeschlagen");
         }
 
+        // --- UPDATE QUANTITY IN DATABASE ---
+        if (currentTicket) {
+          let newQuantity = (currentTicket.quantity || 1) - 1;
+          
+          if (newQuantity <= 0) {
+            // Delete ticket completely if sold out
+            await db.from("tickets").delete().eq("id", ticketId);
+          } else {
+            // Update quantity
+            await db.from("tickets").update({ quantity: newQuantity }).eq("id", ticketId);
+          }
+        }
+
         // Add to purchases
         let purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
         if (!purchases.includes(ticketId)) {
@@ -198,6 +214,9 @@ async function buy(amount) {
         }
 
         alert("✅ Zahlung erfolgreich");
+        
+        // Reload ticket data to show updated quantity, or redirect
+        window.location.href = "index.html";
       },
 
       onCancel: () => {
