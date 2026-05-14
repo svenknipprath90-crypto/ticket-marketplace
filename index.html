@@ -76,8 +76,8 @@
 
   <!-- HERO BANNER -->
   <div class="hero-banner">
-    <h1 class="hero-title">Kaufe & Verkaufe Erlebnisse.</h1>
-    <p class="hero-subtitle">Der erste grenzenlose Marktplatz für Tickets, angetrieben von Pi Network.</p>
+    <h1 class="hero-title" data-i18n="heroTitle">Kaufe & Verkaufe Erlebnisse.</h1>
+    <p class="hero-subtitle" data-i18n="heroSubtitle">Der erste grenzenlose Marktplatz für Tickets, angetrieben von Pi Network.</p>
   </div>
 
   <!-- FILTER -->
@@ -85,32 +85,32 @@
     <input type="text" id="searchInput" data-i18n="searchPlaceholder" placeholder="Suche..." onkeyup="filterTickets()" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
     
     <div class="category-bubbles" id="categoryBubbles">
-      <button class="bubble active" onclick="setCategory('all')">Alles</button>
-      <button class="bubble" onclick="setCategory('Fußball')">⚽️ Fußball</button>
-      <button class="bubble" onclick="setCategory('American Football')">🏈 Football</button>
-      <button class="bubble" onclick="setCategory('Basketball')">🏀 Basketball</button>
-      <button class="bubble" onclick="setCategory('Darts')">🎯 Darts</button>
-      <button class="bubble" onclick="setCategory('Kampfsport')">🥊 Kampfsport</button>
-      <button class="bubble" onclick="setCategory('eSports')">🎮 eSports</button>
-      <button class="bubble" onclick="setCategory('Radsport')">🚴‍♂️ Radsport</button>
-      <button class="bubble" onclick="setCategory('Leichtathletik')">🏃‍♂️ Leichtathletik</button>
-      <button class="bubble" onclick="setCategory('Handball')">🤾‍♂️ Handball</button>
-      <button class="bubble" onclick="setCategory('Eishockey')">🏒 Eishockey</button>
-      <button class="bubble" onclick="setCategory('Tennis')">🎾 Tennis</button>
-      <button class="bubble" onclick="setCategory('Motorsport')">🏎️ Motorsport</button>
-      <button class="bubble" onclick="setCategory('Wintersport')">⛷️ Wintersport</button>
-      <button class="bubble" onclick="setCategory('Schwimmen')">🏊‍♂️ Schwimmen</button>
-      <button class="bubble" onclick="setCategory('Rugby')">🏉 Rugby</button>
-      <button class="bubble" onclick="setCategory('Festival')">🎪 Festival</button>
-      <button class="bubble" onclick="setCategory('Konzert')">🎸 Konzert</button>
-      <button class="bubble" onclick="setCategory('Messe/Convention')">🎡 Messe/Convention</button>
-      <button class="bubble" onclick="setCategory('Freizeitpark')">🎢 Freizeitpark</button>
-      <button class="bubble" onclick="setCategory('Kultur/Klassik')">🎭 Kultur/Klassik</button>
-      <button class="bubble" onclick="setCategory('Musical')">🎶 Musical</button>
-      <button class="bubble" onclick="setCategory('Theater/Comedy')">🎬 Theater/Comedy</button>
-      <button class="bubble" onclick="setCategory('Olympia/Turnier')">🏆 Olympia/Turnier</button>
-      <button class="bubble" onclick="setCategory('Reise/Gutschein')">🚌 Reise/Gutschein</button>
-      <button class="bubble" onclick="setCategory('Sonstiges')">🎫 Sonstiges</button>
+      <button class="bubble active" onclick="setCategory('all')" data-i18n="cat_all">Alles</button>
+      <button class="bubble" onclick="setCategory('Fußball')" data-i18n="cat_football">⚽️ Fußball</button>
+      <button class="bubble" onclick="setCategory('American Football')" data-i18n="cat_amfootball">🏈 Football</button>
+      <button class="bubble" onclick="setCategory('Basketball')" data-i18n="cat_basketball">🏀 Basketball</button>
+      <button class="bubble" onclick="setCategory('Darts')" data-i18n="cat_darts">🎯 Darts</button>
+      <button class="bubble" onclick="setCategory('Kampfsport')" data-i18n="cat_fight">🥊 Kampfsport</button>
+      <button class="bubble" onclick="setCategory('eSports')" data-i18n="cat_esports">🎮 eSports</button>
+      <button class="bubble" onclick="setCategory('Radsport')" data-i18n="cat_bike">🚴‍♂️ Radsport</button>
+      <button class="bubble" onclick="setCategory('Leichtathletik')" data-i18n="cat_track">🏃‍♂️ Leichtathletik</button>
+      <button class="bubble" onclick="setCategory('Handball')" data-i18n="cat_handball">🤾‍♂️ Handball</button>
+      <button class="bubble" onclick="setCategory('Eishockey')" data-i18n="cat_hockey">🏒 Eishockey</button>
+      <button class="bubble" onclick="setCategory('Tennis')" data-i18n="cat_tennis">🎾 Tennis</button>
+      <button class="bubble" onclick="setCategory('Motorsport')" data-i18n="cat_motor">🏎️ Motorsport</button>
+      <button class="bubble" onclick="setCategory('Wintersport')" data-i18n="cat_winter">⛷️ Wintersport</button>
+      <button class="bubble" onclick="setCategory('Schwimmen')" data-i18n="cat_swim">🏊‍♂️ Schwimmen</button>
+      <button class="bubble" onclick="setCategory('Rugby')" data-i18n="cat_rugby">🏉 Rugby</button>
+      <button class="bubble" onclick="setCategory('Festival')" data-i18n="cat_festival">🎪 Festival</button>
+      <button class="bubble" onclick="setCategory('Konzert')" data-i18n="cat_concert">🎸 Konzert</button>
+      <button class="bubble" onclick="setCategory('Messe/Convention')" data-i18n="cat_expo">🎡 Messe/Convention</button>
+      <button class="bubble" onclick="setCategory('Freizeitpark')" data-i18n="cat_park">🎢 Freizeitpark</button>
+      <button class="bubble" onclick="setCategory('Kultur/Klassik')" data-i18n="cat_culture">🎭 Kultur/Klassik</button>
+      <button class="bubble" onclick="setCategory('Musical')" data-i18n="cat_musical">🎶 Musical</button>
+      <button class="bubble" onclick="setCategory('Theater/Comedy')" data-i18n="cat_theater">🎬 Theater/Comedy</button>
+      <button class="bubble" onclick="setCategory('Olympia/Turnier')" data-i18n="cat_olympics">🏆 Olympia/Turnier</button>
+      <button class="bubble" onclick="setCategory('Reise/Gutschein')" data-i18n="cat_travel">🚌 Reise/Gutschein</button>
+      <button class="bubble" onclick="setCategory('Sonstiges')" data-i18n="cat_other">🎫 Sonstiges</button>
     </div>
   </div>
 
