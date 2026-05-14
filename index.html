@@ -4,100 +4,89 @@
 <meta charset="UTF-8">
 <title>Pi Ticket Marketplace</title>
 
+<!-- External Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
+<!-- CSS & i18n -->
+<link rel="stylesheet" href="style.css">
+<script src="i18n.js"></script>
+
 <style>
-body {
-  margin:0;
-  font-family:sans-serif;
-  background:#0b1220;
-  color:white;
+/* Page specific styles */
+.filter-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  background: var(--glass-bg);
+  padding: 15px;
+  border-radius: 15px;
+  border: 1px solid var(--glass-border);
 }
 
-.header {
-  padding:20px;
-  font-size:22px;
-  font-weight:bold;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
-
-.top-buttons {
-  padding:15px;
-}
-
-.button {
-  display:inline-block;
-  margin-right:10px;
-  padding:12px 18px;
-  background:#2563eb;
-  color:white;
-  border-radius:10px;
-  text-decoration:none;
-  font-weight:bold;
-  border:none;
-  cursor:pointer;
-}
-
-#loginBtn {
-  background:#16a34a;
-}
-
-#logoutBtn {
-  background:#dc2626;
-  display:none;
-}
-
-#tickets {
-  padding:15px;
-}
-
-.card {
-  background:#1e293b;
-  border-radius:15px;
-  margin-bottom:20px;
-  overflow:hidden;
-}
-
-.card img {
-  width:100%;
-  height:220px;
-  object-fit:cover;
-}
-
-.content {
-  padding:15px;
-}
-
-.heart {
-  font-size:28px;
-  cursor:pointer;
+.category-select {
+  padding: 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+  width: auto;
 }
 </style>
 </head>
 
 <body>
+<div class="container">
 
-<div class="header">
-  <div>🎟️ Pi Ticket Marketplace</div>
-  <div id="user"></div>
+  <!-- HEADER -->
+  <div class="header glass-panel">
+    <div class="header-logo-container">
+      <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" alt="Logo" class="header-logo">
+      <div>
+        <h1 class="header-title" data-i18n="title">🎟️ Pi Ticket Marketplace</h1>
+        <div id="user" style="color: #60a5fa; font-weight: 600; margin-top: 5px;"></div>
+      </div>
+    </div>
+    
+    <div class="lang-toggle">
+      <button class="lang-btn" id="lang-de" onclick="setLanguage('de')">🇩🇪</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">🇬🇧</button>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <div style="margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <button id="loginBtn" class="btn btn-success" data-i18n="login">🔐 Login mit Pi</button>
+    <button id="logoutBtn" class="btn btn-danger" style="display:none;" data-i18n="logout">🚪 Logout</button>
+    <a href="create.html" class="btn btn-primary" data-i18n="createTicketBtn">➕ Ticket erstellen</a>
+    <a href="favorites.html" class="btn btn-glass" data-i18n="favorites">❤️ Favoriten</a>
+    <a href="my-sales.html" class="btn btn-glass" id="mySalesBtn" style="display:none;" data-i18n="myTickets">🎫 Meine Verkäufe</a>
+  </div>
+
+  <!-- FILTER -->
+  <div class="filter-bar">
+    <strong data-i18n="category">Kategorie:</strong>
+    <select id="categoryFilter" class="category-select" onchange="filterTickets()">
+      <option value="all">Alle Kategorien</option>
+      <option value="Fußball">Fußball</option>
+      <option value="Basketball">Basketball</option>
+      <option value="Motorsport">Motorsport</option>
+      <option value="Olympia/Turnier">Olympia / Großturnier</option>
+      <option value="Konzert">Konzert</option>
+      <option value="Theater/Musical">Theater / Musical</option>
+      <option value="Sonstiges">Sonstiges</option>
+    </select>
+  </div>
+
+  <!-- TICKETS GRID -->
+  <div id="tickets" class="tickets-grid"></div>
+
 </div>
-
-<div class="top-buttons">
-  <button id="loginBtn" class="button">🔐 Login mit Pi</button>
-  <button id="logoutBtn" class="button">🚪 Logout</button>
-  <a href="create.html" class="button">➕ Ticket erstellen</a>
-  <a href="favorites.html" class="button">❤️ Favoriten</a>
-</div>
-
-<div id="tickets"></div>
 
 <script>
-
 // ================= USER =================
-
 let currentUser = localStorage.getItem("pi_user") || null;
 let favorites = [];
 
@@ -105,20 +94,31 @@ function updateUI() {
   const userEl = document.getElementById("user");
   const loginBtn = document.getElementById("loginBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const mySalesBtn = document.getElementById("mySalesBtn");
 
   if (currentUser) {
     userEl.innerText = "👤 " + currentUser;
     loginBtn.style.display = "none";
-    logoutBtn.style.display = "inline-block";
+    logoutBtn.style.display = "inline-flex";
+    mySalesBtn.style.display = "inline-flex";
     loadFavorites();
   } else {
     userEl.innerText = "";
-    loginBtn.style.display = "inline-block";
+    loginBtn.style.display = "inline-flex";
     logoutBtn.style.display = "none";
+    mySalesBtn.style.display = "none";
   }
+
+  // Active language button
+  document.getElementById("lang-de").classList.toggle("active", currentLang === "de");
+  document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
 }
 
-// PI INIT (Globale Initialisierung)
+window.addEventListener("DOMContentLoaded", () => {
+  updateUI();
+});
+
+// PI INIT
 Pi.init({ version: "2.0", sandbox: true });
 
 const onIncompletePaymentFound = async (payment) => {
@@ -126,14 +126,12 @@ const onIncompletePaymentFound = async (payment) => {
   try {
     if (payment.transaction && payment.transaction.txid) {
       await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "complete", paymentId: payment.identifier, txid: payment.transaction.txid })
       });
     } else {
       await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "approve", paymentId: payment.identifier })
       });
     }
@@ -147,11 +145,8 @@ async function loginPi() {
   try {
     const auth = await Pi.authenticate(['username', 'payments'], onIncompletePaymentFound);
     currentUser = auth.user.username;
-
     localStorage.setItem("pi_user", currentUser);
-
     updateUI();
-
   } catch (e) {
     alert("Login nur im Pi Browser möglich");
   }
@@ -169,122 +164,95 @@ function logout() {
 document.getElementById("loginBtn").onclick = loginPi;
 document.getElementById("logoutBtn").onclick = logout;
 
-
 // ================= SUPABASE =================
-
 const db = window.supabase.createClient(
   "https://rucejmhjgfvlntoxhczm.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1Y2VqbWhqZ2Z2bG50b3hoY3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTU4OTcsImV4cCI6MjA5MDEzMTg5N30.Eq1vP38qyX0c-m23mceGg-gxZD_mn4sOyGqVxZMRoFk"
 );
 
-
 // ================= FAVORITEN =================
-
 async function loadFavorites() {
   if (!currentUser) return;
-
-  const { data } = await db
-    .from("favorites")
-    .select("*")
-    .eq("user_id", currentUser);
-
+  const { data } = await db.from("favorites").select("*").eq("user_id", currentUser);
   if (!data) return;
-
   favorites = data.map(f => f.ticket_id);
   render();
 }
 
 async function toggleFavorite(ticketId, event) {
-
-  event.stopPropagation(); // wichtig wegen Klick auf Karte
-
+  event.stopPropagation();
   if (!currentUser) {
-    alert("Bitte erst einloggen!");
+    alert(t("notLoggedIn"));
     return;
   }
-
   const exists = favorites.includes(ticketId);
-
   if (exists) {
-
-    await db
-      .from("favorites")
-      .delete()
-      .eq("user_id", currentUser)
-      .eq("ticket_id", ticketId);
-
+    await db.from("favorites").delete().eq("user_id", currentUser).eq("ticket_id", ticketId);
   } else {
-
-    await db
-      .from("favorites")
-      .insert({
-        user_id: currentUser,
-        ticket_id: ticketId
-      });
+    await db.from("favorites").insert({ user_id: currentUser, ticket_id: ticketId });
   }
-
   loadFavorites();
 }
 
-
 // ================= TICKETS =================
-
 let ticketsData = [];
 
 async function loadTickets() {
-
-  const { data } = await db
-    .from("tickets")
-    .select("*")
-    .order("created_at", { ascending: false });
-
+  const { data } = await db.from("tickets").select("*").order("created_at", { ascending: false });
   ticketsData = data || [];
   render();
 }
 
+function filterTickets() {
+  render();
+}
 
 // ================= RENDER =================
-
 function render() {
-
   const el = document.getElementById("tickets");
   el.innerHTML = "";
+  
+  const selectedCategory = document.getElementById("categoryFilter").value;
 
-  ticketsData.forEach(t => {
+  ticketsData.forEach(tick => {
+    if (tick.quantity <= 0) return;
+    if (selectedCategory !== "all" && tick.category !== selectedCategory) return;
 
-    // Only show tickets that have more than 0 quantity
-    if (t.quantity <= 0) return;
-
-    const isFav = favorites.includes(t.id);
+    const isFav = favorites.includes(tick.id);
+    const availableText = t("available", { n: tick.quantity || 1 });
 
     el.innerHTML += `
-      <div class="card" onclick="window.location.href='ticket.html?id=${t.id}'" style="cursor:pointer;">
-        ${t.image ? `<img src="${t.image}">` : ""}
-        <div class="content">
-          <h3>${t.title}</h3>
-          <p>${t.category}</p>
-          <p>${t.description}</p>
-          <strong>${t.price} Pi</strong>
-          <p style="color: #22c55e; font-size: 14px;">📦 Noch ${t.quantity || 1} verfügbar</p>
-          <br>
-
-          <span class="heart" onclick="toggleFavorite(${t.id}, event)">
-            ${isFav ? "❤️" : "🤍"}
-          </span>
-
+      <div class="card" onclick="window.location.href='ticket.html?id=${tick.id}'" style="cursor:pointer;">
+        ${tick.image ? `<img src="${tick.image}">` : ""}
+        <div class="card-content">
+          <div class="tag">${tick.category}</div>
+          <h3 class="card-title">${tick.title}</h3>
+          <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px;">${tick.description.substring(0, 50)}...</p>
+          <p style="color: var(--success); font-weight: bold; font-size: 14px; margin-bottom: 5px;">📦 ${availableText}</p>
+          
+          <div class="card-footer">
+            <span class="price">${tick.price} Pi</span>
+            <span class="heart" onclick="toggleFavorite(${tick.id}, event)">
+              ${isFav ? "❤️" : "🤍"}
+            </span>
+          </div>
         </div>
       </div>
     `;
   });
 }
 
+// Override setLanguage to also re-render tickets
+const originalSetLanguage = setLanguage;
+window.setLanguage = function(lang) {
+  originalSetLanguage(lang);
+  updateUI();
+  render();
+}
 
 // ================= INIT =================
-
-updateUI();
 loadTickets();
 
 </script>
-
 </body>
 </html>

@@ -1,0 +1,233 @@
+/* ================= GLOBAL DESIGN ================= */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+:root {
+  --bg-color: #0b1220;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --primary: #8b5cf6;
+  --secondary: #3b82f6;
+  --success: #10b981;
+  --danger: #ef4444;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background: radial-gradient(circle at top left, #1e1b4b, var(--bg-color));
+  color: var(--text-main);
+  min-height: 100vh;
+}
+
+/* ================= COMPONENTS ================= */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.header-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.header-logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.header-title {
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(to right, #a855f7, #3b82f6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+/* ================= BUTTONS ================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  color: white;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+.btn-success { background: linear-gradient(135deg, #059669, var(--success)); }
+.btn-danger { background: linear-gradient(135deg, #b91c1c, var(--danger)); }
+.btn-glass { 
+  background: var(--glass-bg); 
+  border: 1px solid var(--glass-border); 
+}
+.btn-glass:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* ================= FORMS ================= */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: white;
+  font-family: inherit;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+/* ================= CARDS ================= */
+.tickets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.card-content {
+  padding: 20px;
+}
+
+.card-title {
+  margin: 0 0 10px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  margin-bottom: 10px;
+}
+
+.price {
+  font-size: 22px;
+  font-weight: 800;
+  color: #fbbf24;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px dashed var(--glass-border);
+}
+
+/* ================= LANG TOGGLE ================= */
+.lang-toggle {
+  display: flex;
+  gap: 10px;
+}
+.lang-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.3s;
+}
+.lang-btn.active { opacity: 1; filter: drop-shadow(0 0 5px rgba(255,255,255,0.5)); }
+
+/* ================= LIGHTBOX ================= */
+.lightbox {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+.lightbox img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 15px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+.lightbox-close {
+  position: absolute;
+  top: 20px; right: 20px;
+  color: white; font-size: 40px;
+  cursor: pointer;
+}

@@ -2,89 +2,110 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Ticket</title>
+<title>Ticket Details</title>
 
+<!-- External Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://sdk.minepi.com/pi-sdk.js"></script>
 
+<!-- CSS & i18n -->
+<link rel="stylesheet" href="style.css">
+<script src="i18n.js"></script>
+
 <style>
-body {
-  margin: 0;
-  font-family: sans-serif;
-  background: #0b1220;
-  color: white;
+.ticket-detail-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 30px;
+  margin-top: 20px;
 }
-
-.container {
-  padding: 20px;
-}
-
-img {
+.ticket-detail-img {
   width: 100%;
+  height: 300px;
+  object-fit: cover;
   border-radius: 15px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: transform 0.3s;
 }
-
-.button {
-  padding: 15px;
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  background: #22c55e;
-  color: white;
-  font-size: 18px;
+.ticket-detail-img:hover {
+  transform: scale(1.02);
 }
-
-.back {
-  color: #60a5fa;
-  display: block;
-  margin-bottom: 15px;
+.ticket-info p {
+  margin: 10px 0;
+  color: var(--text-muted);
+}
+.ticket-info strong {
+  color: var(--text-main);
+}
+.price-box {
+  background: rgba(0,0,0,0.3);
+  padding: 20px;
+  border-radius: 15px;
+  margin-top: 20px;
+  border: 1px solid var(--glass-border);
 }
 </style>
 </head>
-
 <body>
 
 <div class="container">
-  <a href="index.html" class="back">⬅ Zurück</a>
-  <div id="content">Lade...</div>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <a href="index.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
+    <div class="lang-toggle">
+      <button class="lang-btn" id="lang-de" onclick="setLanguage('de'); window.location.reload();">🇩🇪</button>
+      <button class="lang-btn" id="lang-en" onclick="setLanguage('en'); window.location.reload();">🇬🇧</button>
+    </div>
+  </div>
+
+  <div id="content" class="ticket-detail-card">
+    <div style="text-align: center; margin-top: 50px;">Lade... / Loading...</div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close">&times;</span>
+  <img id="lightbox-img" src="">
 </div>
 
 <script>
+// ================= LIGHTBOX =================
+function openLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+}
 
 // ================= PI INIT & LOGIN =================
 Pi.init({ version: "2.0", sandbox: true });
 
 let currentUser = localStorage.getItem("pi_user") || null;
 
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("lang-de").classList.toggle("active", currentLang === "de");
+  document.getElementById("lang-en").classList.toggle("active", currentLang === "en");
+});
+
 const onIncompletePaymentFound = async (payment) => {
   console.log("Incomplete payment found:", payment);
   try {
-    // If there is a txid, we should complete the payment
     if (payment.transaction && payment.transaction.txid) {
       await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "complete",
-          paymentId: payment.identifier,
-          txid: payment.transaction.txid
-        })
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete", paymentId: payment.identifier, txid: payment.transaction.txid })
       });
     } else {
-      // Otherwise try to approve it
       await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "approve",
-          paymentId: payment.identifier
-        })
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve", paymentId: payment.identifier })
       });
     }
-  } catch (e) {
-    console.error("Error handling incomplete payment:", e);
-  }
+  } catch (e) { console.error("Error handling incomplete payment:", e); }
 };
 
 // ================= SUPABASE =================
@@ -99,179 +120,142 @@ const params = new URLSearchParams(window.location.search);
 const ticketId = params.get("id");
 
 async function loadTicket() {
-  const { data, error } = await db
-    .from("tickets")
-    .select("*")
-    .eq("id", ticketId)
-    .single();
-
+  const { data, error } = await db.from("tickets").select("*").eq("id", ticketId).single();
   if (error || !data) {
-    document.getElementById("content").innerHTML = "Fehler beim Laden";
+    document.getElementById("content").innerHTML = "Fehler beim Laden / Loading Error";
     return;
   }
-
   currentTicket = data;
   render(data);
 }
 
 // ================= UI =================
-function render(t) {
-
-  const maxQty = t.quantity || 1;
+function render(tData) {
+  const maxQty = tData.quantity || 1;
+  const isSoldOut = maxQty <= 0;
 
   window.updatePrice = function() {
     const inputEl = document.getElementById('buyQuantity');
-    let qty = parseInt(inputEl.value) || 1;
+    if(!inputEl) return;
     
-    // Validate quantity bounds
+    let qty = parseInt(inputEl.value) || 1;
     if (qty > maxQty) { qty = maxQty; inputEl.value = maxQty; }
     if (qty < 1) { qty = 1; inputEl.value = 1; }
 
-    const basePrice = parseFloat(t.price);
+    const basePrice = parseFloat(tData.price);
     const fee = (basePrice * qty * 0.1).toFixed(2);
     const total = (basePrice * qty + parseFloat(fee)).toFixed(2);
 
     document.getElementById('priceDisplay').innerHTML = `
-      <h3>${(basePrice * qty).toFixed(2)} Pi (für ${qty} Ticket/s)</h3>
-      <p>Service Fee: ${fee} Pi</p>
-      <h2>Gesamt: ${total} Pi</h2>
-      <button class="button" onclick="buy(${total}, ${qty})">💸 Jetzt kaufen</button>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin:0;">${(basePrice * qty).toFixed(2)} Pi (x${qty})</h3>
+        <p style="margin:0;">${t("serviceFee")}: ${fee} Pi</p>
+      </div>
+      <h2 style="margin: 15px 0 20px 0; color: #fbbf24;">${t("total")}: ${total} Pi</h2>
+      
+      ${currentUser ? 
+        `<button class="btn btn-primary" style="width:100%; font-size:18px;" onclick="buy(${total}, ${qty})">${t("buyBtn")}</button>` : 
+        `<div style="text-align:center; padding: 15px; background: rgba(239, 68, 68, 0.2); border-radius: 10px; color: #fca5a5;">
+          ${t("notLoggedIn")} <br> <a href="index.html" style="color: white; font-weight: bold;">${t("buyLoginBtn")}</a>
+         </div>`
+      }
     `;
   };
 
+  const imageHtml = tData.image ? `<img src="${tData.image}" class="ticket-detail-img" onclick="openLightbox('${tData.image}')">` : "";
+  const locationHtml = tData.location ? `<p><strong>${t("location")}:</strong> ${tData.location}</p>` : "";
+  const availableText = t("available", { n: maxQty });
+
   document.getElementById("content").innerHTML = `
-    ${t.image ? `<img src="${t.image}">` : ""}
-    <h2>${t.title}</h2>
-    <p>Kategorie: ${t.category}</p>
-    <p>${t.location || ''}</p>
-    <p style="color: #22c55e; font-weight: bold;">📦 Noch ${maxQty} verfügbar</p>
+    ${imageHtml}
+    <h1 style="margin-top:0;">${tData.title}</h1>
+    <span class="tag" style="font-size:14px;">${tData.category}</span>
     
-    <div style="margin: 15px 0; background: #1e293b; padding: 15px; border-radius: 10px;">
-      <label style="font-weight: bold;">Wie viele Tickets möchtest du kaufen?</label><br>
-      <input type="number" id="buyQuantity" min="1" max="${maxQty}" value="1" onchange="updatePrice()" onkeyup="updatePrice()" style="width:100%; padding:10px; font-size:16px; margin-top:10px; border-radius: 8px; border: none;">
+    <div class="ticket-info" style="margin-top: 20px;">
+      <p><strong>${t("description")}:</strong><br> ${tData.description}</p>
+      ${locationHtml}
+      <p style="color: ${isSoldOut ? 'var(--danger)' : 'var(--success)'}; font-weight: bold; font-size: 18px;">
+        ${isSoldOut ? '❌ ' + t("soldOut") : '📦 ' + availableText}
+      </p>
     </div>
     
-    <div id="priceDisplay"></div>
+    ${!isSoldOut ? `
+    <div class="price-box">
+      <div class="form-group">
+        <label>${t("selectQty")}</label>
+        <input type="number" id="buyQuantity" min="1" max="${maxQty}" value="1" onchange="updatePrice()" onkeyup="updatePrice()">
+      </div>
+      <div id="priceDisplay"></div>
+    </div>
+    ` : ''}
   `;
   
-  updatePrice();
+  if(!isSoldOut) updatePrice();
 }
 
 // ================= PAYMENT =================
 async function buy(amount, selectedQuantity) {
-
-  if (!currentUser) {
-    alert("Nicht eingeloggt");
-    return;
-  }
+  if (!currentUser) return;
 
   try {
-    // Authenticate current session for payments scope before creating payment
     await Pi.authenticate(["payments", "username"], onIncompletePaymentFound);
-
     await Pi.createPayment({
       amount: amount,
       memo: selectedQuantity + "x Ticket Kauf",
       metadata: { ticketId: ticketId, quantity: selectedQuantity }
     }, {
-
-      // 🔥 APPROVE
       onReadyForServerApproval: async (paymentId) => {
-
         const res = await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            action: "approve",
-            paymentId: paymentId
-          })
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "approve", paymentId: paymentId })
         });
-
         const data = await res.json();
-
-        if (!data.success) {
-          throw new Error("Approve fehlgeschlagen");
-        }
+        if (!data.success) throw new Error("Approve fehlgeschlagen");
       },
-
-      // 🔥 COMPLETE
       onReadyForServerCompletion: async (paymentId, txid) => {
-
         const res = await fetch("https://rucejmhjgfvlntoxhczm.supabase.co/functions/v1/verify-payment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            action: "complete",
-            paymentId: paymentId,
-            txid: txid
-          })
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "complete", paymentId: paymentId, txid: txid })
         });
-
         const data = await res.json();
+        if (!data.success) throw new Error("Complete fehlgeschlagen");
 
-        if (!data.success) {
-          throw new Error("Complete fehlgeschlagen");
-        }
-
-        // --- UPDATE QUANTITY IN DATABASE ---
         if (currentTicket) {
           let newQuantity = (currentTicket.quantity || 1) - selectedQuantity;
-          
           let dbError = null;
           if (newQuantity <= 0) {
-            // Delete ticket completely if sold out
             const res = await db.from("tickets").delete().eq("id", ticketId);
             dbError = res.error;
           } else {
-            // Update quantity
             const res = await db.from("tickets").update({ quantity: newQuantity }).eq("id", ticketId);
             dbError = res.error;
           }
 
           if (dbError) {
              console.error("Supabase RLS Error:", dbError);
-             alert("Zahlung war erfolgreich, ABER die Anzahl konnte nicht in der Datenbank reduziert werden. Grund: Fehlende Datenbank-Berechtigungen (Supabase RLS).");
+             alert(t("success") + " ABER " + t("dbError") + " (Supabase RLS)");
           } else {
-             alert("✅ Zahlung erfolgreich & Anzahl aktualisiert!");
+             alert(t("success"));
           }
         } else {
-             alert("✅ Zahlung erfolgreich");
+             alert(t("success"));
         }
 
-        // Add to purchases
         let purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
         if (!purchases.includes(ticketId)) {
           purchases.push(ticketId);
           localStorage.setItem("purchases", JSON.stringify(purchases));
         }
 
-        // Reload ticket data to show updated quantity, or redirect
         window.location.href = "index.html";
       },
-
-      onCancel: () => {
-        alert("❌ Zahlung abgebrochen");
-      },
-
-      onError: (e) => {
-        alert("Fehler: " + e.message);
-      }
-
+      onCancel: () => alert(t("cancel")),
+      onError: (e) => alert("Error: " + e.message)
     });
-
-  } catch (e) {
-    alert(e.message);
-  }
+  } catch (e) { alert(e.message); }
 }
 
-// ================= START =================
 loadTicket();
-
 </script>
-
 </body>
 </html>
