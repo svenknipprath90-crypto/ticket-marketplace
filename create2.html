@@ -185,6 +185,8 @@
           const { data: alerts, error: alertsErr } = await supabase.from("search_alerts").select("*");
           if (alertsErr) throw alertsErr;
 
+          alert("Debug: " + (alerts ? alerts.length : 0) + " Such-Abos in der DB gefunden.");
+
           if (alerts && alerts.length > 0) {
             const matchedUsers = new Set();
             const notificationsToInsert = [];
@@ -208,6 +210,8 @@
               }
             });
             
+            alert("Debug: " + notificationsToInsert.length + " Matches gefunden.");
+
             if (notificationsToInsert.length > 0) {
               const { error: notifErr } = await supabase.from("notifications").insert(notificationsToInsert);
               if (notifErr) throw notifErr;
