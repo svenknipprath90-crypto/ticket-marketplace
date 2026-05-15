@@ -32,11 +32,33 @@
 .sales-content {
   flex-grow: 1;
 }
+.floating-home-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--primary);
+  color: white;
+  padding: 15px;
+  border-radius: 50%;
+  font-size: 24px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  text-decoration: none;
+  z-index: 1000;
+}
 </style>
 </head>
 <body>
 
 <div class="container">
+
+  <div class="header glass-panel" style="margin-bottom: 20px;">
+    <a href="index.html" class="header-logo-container" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; gap: 15px;">
+      <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" alt="Logo" class="header-logo" style="width: 50px; border-radius: 10px;">
+      <div>
+        <h1 class="header-title" style="margin: 0; font-size: 20px;">🎟️ Pi Ticket Marketplace</h1>
+      </div>
+    </a>
+  </div>
 
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <a href="index.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
@@ -51,11 +73,13 @@
     Hier siehst du alle Tickets, die du erstellt hast, sowie deren Restbestand.
   </p>
 
-  <div id="salesList">
-    <div style="text-align: center;">Lade... / Loading...</div>
+  <div id="salesList" style="display: flex; flex-direction: column; gap: 15px;">
+    <div style="text-align: center; color: var(--text-muted);" data-i18n="loading">Lade... / Loading...</div>
   </div>
 
 </div>
+
+<a href="index.html" class="floating-home-btn" title="Zurück zur Startseite">🏠</a>
 
 <script>
 // ================= USER & INIT =================
@@ -122,7 +146,7 @@ async function loadSales() {
     });
   }
 
-  // 2. Load Orders (Purchases made by others from this seller)
+  // 2. Load Orders
   const { data: ordersData } = await db
     .from("orders")
     .select("*")
@@ -138,8 +162,14 @@ async function loadSales() {
   }
 
   ordersData.forEach(order => {
-    let statusClass = order.status === 'shipped' ? 'status-shipped' : 'status-paid';
-    let statusText = order.status === 'shipped' ? 'Versendet' : 'Bezahlt';
+    let status = order.status;
+    let statusClass = status === 'shipped' ? 'status-shipped' : 'status-paid';
+    let statusText = status === 'shipped' ? 'Versendet' : 'Bezahlt';
+
+    let actionBtn = '';
+    if(status === 'paid') {
+      actionBtn = `<button class="btn btn-primary" onclick="markAsShipped(${order.id}, '${order.ticket_title}', '${order.buyer}')" data-i18n="markShipped">📦 Als versendet markieren</button>`;
+    }
 
     let payoutHtml = '';
     const pStatus = order.payout_status || 'pending';
@@ -154,12 +184,13 @@ async function loadSales() {
     el.innerHTML += `
       <div class="glass-panel" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin-bottom: 10px;">
-          <strong>Order-ID: ${order.id.substring(0,8)}...</strong>
-          <span style="padding: 5px 10px; border-radius: 8px; font-weight:bold; ${order.status==='shipped'?'background:rgba(16,185,129,0.2);color:#34d399;':'background:rgba(59,130,246,0.2);color:#60a5fa;'}">${statusText}</span>
+          <strong>Order-ID: ${order.id.toString().substring(0,8)}...</strong>
+          <span style="padding: 5px 10px; border-radius: 8px; font-weight:bold; ${status==='shipped'?'background:rgba(16,185,129,0.2);color:#34d399;':'background:rgba(59,130,246,0.2);color:#60a5fa;'}">${statusText}</span>
         </div>
         <h3>${order.ticket_title || 'Ticket'}</h3>
         <p><strong>Käufer:</strong> ${order.buyer}</p>
         <p><strong>Menge:</strong> ${order.quantity} | <strong>Preis:</strong> ${order.total_price} Pi</p>
+        ${actionBtn}
         <div style="margin-top: 15px;">
           <a href="order.html?id=${order.id}" class="btn btn-primary" style="width: 100%;">📄 ${t('orderDetails')} & Chat</a>
         </div>
@@ -171,7 +202,23 @@ async function loadSales() {
   setTimeout(applyTranslations, 100);
 }
 
-// ================= PAYOUT REQUEST =================
+// ================= ACTIONS =================
+async function markAsShipped(orderId, ticketTitle, buyerId) {
+  if(!confirm("Ticket als versendet/bereitgestellt markieren? / Mark ticket as shipped?")) return;
+  const { error } = await db.from("orders").update({ status: "shipped" }).eq("id", orderId);
+  if(error) {
+    alert("Error: " + error.message);
+  } else {
+    try {
+      await db.from("notifications").insert({
+        user_id: buyerId,
+        message: `📦 Dein Ticket wurde versendet/bereitgestellt: ${ticketTitle}`
+      });
+    } catch(e) { console.error("Notification Error", e); }
+    loadSales();
+  }
+}
+
 async function requestPayout(orderId) {
   if(confirm("Möchtest du die Auszahlung für diese Bestellung anfordern? / Request payout for this order?")) {
     await db.from("orders").update({ payout_status: 'requested' }).eq("id", orderId);
@@ -179,7 +226,6 @@ async function requestPayout(orderId) {
   }
 }
 
-// ================= DELETE LOGIC =================
 async function deleteTicket(id) {
   if(confirm(t('deleteConfirm'))) {
     await db.from("tickets").delete().eq("id", id);

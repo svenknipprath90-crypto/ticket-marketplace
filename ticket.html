@@ -52,6 +52,15 @@
 <body>
 
 <div class="container">
+  <div class="header glass-panel" style="margin-bottom: 20px;">
+    <a href="index.html" class="header-logo-container" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; gap: 15px;">
+      <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" alt="Logo" class="header-logo" style="width: 50px; border-radius: 10px;">
+      <div>
+        <h1 class="header-title" style="margin: 0; font-size: 20px;">🎟️ Pi Ticket Marketplace</h1>
+      </div>
+    </a>
+  </div>
+
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
     <a href="index.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
     <div class="lang-toggle">
@@ -70,6 +79,9 @@
   <span class="lightbox-close">&times;</span>
   <img id="lightbox-img" src="">
 </div>
+
+<!-- Floating Home Button -->
+<a href="index.html" class="floating-home-btn" title="Zurück zur Startseite">🏠</a>
 
 <script>
 // ================= LIGHTBOX =================
@@ -279,6 +291,18 @@ async function postComment() {
   if(!text || !currentUser) return;
 
   await db.from("comments").insert({ ticket_id: ticketId, user_id: currentUser, text: text });
+  
+  // Notify Seller if someone else commented
+  if (currentTicket && currentTicket.seller && currentTicket.seller !== currentUser) {
+    try {
+      await db.from("notifications").insert({
+        user_id: currentTicket.seller,
+        ticket_id: ticketId,
+        message: `💬 Neue Frage zu deinem Ticket: ${currentTicket.title}`
+      });
+    } catch(e) { console.error("Notification Error", e); }
+  }
+
   input.value = "";
   loadComments();
 }
@@ -391,6 +415,15 @@ async function buy(amount, selectedQuantity) {
                 console.error("Order Insert Error:", orderError);
                 alert("Zahlung erfolgreich, aber Bestellung konnte nicht gespeichert werden.");
              } else {
+                // Notify Seller about the purchase
+                try {
+                  await db.from("notifications").insert({
+                    user_id: currentTicket.seller,
+                    ticket_id: ticketId,
+                    message: `💰 Du hast ${selectedQuantity}x ein Ticket verkauft: ${currentTicket.title}`
+                  });
+                } catch(e) { console.error("Notification error", e); }
+
                 alert(t("success"));
              }
           }

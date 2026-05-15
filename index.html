@@ -44,13 +44,13 @@
 
   <!-- HEADER -->
   <div class="header glass-panel">
-    <div class="header-logo-container">
+    <a href="index.html" class="header-logo-container" style="text-decoration: none; cursor: pointer;">
       <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" alt="Logo" class="header-logo">
       <div>
         <h1 class="header-title" data-i18n="title">🎟️ Pi Ticket Marketplace</h1>
         <div id="user" style="color: #60a5fa; font-weight: 600; margin-top: 5px;"></div>
       </div>
-    </div>
+    </a>
     
     <div class="lang-toggle" style="display:flex; align-items:center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
       <div id="bellContainer" style="display:none; position:relative; cursor:pointer;" onclick="toggleNotifications()">
@@ -83,6 +83,7 @@
       🎫 Meine Verkäufe
       <span id="salesDot" style="display:none; position:absolute; top:-5px; right:-5px; width:12px; height:12px; background:red; border-radius:50%; box-shadow:0 0 5px red;"></span>
     </a>
+    <a href="my-alerts.html" class="btn btn-glass" id="myAlertsBtn" style="display:none;">🔔 Meine Such-Abos</a>
   </div>
 
   <!-- HERO BANNER -->
@@ -148,6 +149,9 @@
 
 </div>
 
+<!-- Floating Home Button -->
+<a href="index.html" class="floating-home-btn" title="Zurück zur Startseite">🏠</a>
+
 <script>
 // ================= USER =================
 let currentUser = localStorage.getItem("pi_user") || null;
@@ -162,6 +166,7 @@ function updateUI() {
   const myPurchasesBtn = document.getElementById("myPurchasesBtn");
   const adminBtn = document.getElementById("adminBtn");
   const bellContainer = document.getElementById("bellContainer");
+  const myAlertsBtn = document.getElementById("myAlertsBtn");
 
   if (currentUser) {
     userEl.innerText = "👤 " + currentUser;
@@ -169,6 +174,7 @@ function updateUI() {
     logoutBtn.style.display = "inline-flex";
     mySalesBtn.style.display = "inline-flex";
     myPurchasesBtn.style.display = "inline-flex";
+    myAlertsBtn.style.display = "inline-flex";
     bellContainer.style.display = "block";
     
     if (currentUser === "Gkcity1990") {
@@ -185,6 +191,7 @@ function updateUI() {
     logoutBtn.style.display = "none";
     mySalesBtn.style.display = "none";
     myPurchasesBtn.style.display = "none";
+    myAlertsBtn.style.display = "none";
     adminBtn.style.display = "none";
     bellContainer.style.display = "none";
   }

@@ -40,8 +40,13 @@
 <body>
 
 <div class="container">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <a href="index.html" class="btn btn-glass" data-i18n="back">⬅ Zurück</a>
+  <div class="header glass-panel" style="margin-bottom: 20px; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+    <a href="index.html" class="header-logo-container" style="text-decoration: none; cursor: pointer; display: flex; align-items: center; gap: 15px;">
+      <img src="0ED2A097-4CDA-417A-A473-BCD55056B90E.png" alt="Logo" class="header-logo" style="width: 50px; border-radius: 10px;">
+      <div>
+        <h1 class="header-title" style="margin: 0; font-size: 20px;">🎟️ Pi Ticket Marketplace</h1>
+      </div>
+    </a>
     <div class="lang-toggle">
       <button class="lang-btn" id="lang-de" onclick="setLanguage('de'); window.location.reload();">🇩🇪</button>
       <button class="lang-btn" id="lang-en" onclick="setLanguage('en'); window.location.reload();">🇬🇧</button>
@@ -58,6 +63,9 @@
   </div>
 
 </div>
+
+<!-- Floating Home Button -->
+<a href="index.html" class="floating-home-btn" title="Zurück zur Startseite">🏠</a>
 
 <script>
 // ================= USER & INIT =================
