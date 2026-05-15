@@ -350,6 +350,8 @@ async function loadAlertNotifications() {
     alert("Debug Notifications Error: " + error.message);
   }
 
+  alert("Debug: Suche nach Benachrichtigungen für User '" + currentUser + "'. Gefunden: " + (data ? data.length : 0));
+
   if (!data || data.length === 0) {
     list.innerHTML = `<p style="color:var(--text-muted); font-size:14px;" data-i18n="noNotifications">Keine neuen Benachrichtigungen.</p>`;
     document.getElementById("bellDot").style.display = "none";
