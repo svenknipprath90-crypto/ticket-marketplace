@@ -381,7 +381,11 @@ async function readNotification(id, ticketId) {
 async function subscribeSearch() {
   const term = document.getElementById("searchInput").value.trim();
   if(!term || !currentUser) return;
-  await db.from("search_alerts").insert({ user_id: currentUser, keyword: term });
+  const { error } = await db.from("search_alerts").insert({ user_id: currentUser, keyword: term });
+  if (error) {
+    alert("Fehler beim Speichern: " + error.message);
+    return;
+  }
   alert(t("searchSubscribed"));
 }
 
