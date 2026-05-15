@@ -176,22 +176,32 @@
         document.getElementById("createBtn").innerText = "Ticket speichern";
         document.getElementById("createBtn").disabled = false;
       } else {
-        const newTicket = insertData[0];
+        const newTicket = insertData ? insertData[0] : null;
+        if (!newTicket) {
+          alert("Debug: insertData ist leer! Ticket-ID konnte nicht gelesen werden.");
+        }
         
         try {
-          const { data: alerts } = await supabase.from("search_alerts").select("*");
+          const { data: alerts, error: alertsErr } = await supabase.from("search_alerts").select("*");
+          if (alertsErr) throw alertsErr;
+
           if (alerts && alerts.length > 0) {
             const matchedUsers = new Set();
             const notificationsToInsert = [];
             
             alerts.forEach(a => {
+              if (!a.keyword) return;
               const kw = a.keyword.toLowerCase();
-              if (title.toLowerCase().includes(kw) || category.toLowerCase().includes(kw) || location.toLowerCase().includes(kw)) {
+              const t = (title || "").toLowerCase();
+              const c = (category || "").toLowerCase();
+              const l = (location || "").toLowerCase();
+
+              if (t.includes(kw) || c.includes(kw) || l.includes(kw)) {
                 if (!matchedUsers.has(a.user_id)) {
                   matchedUsers.add(a.user_id);
                   notificationsToInsert.push({
                     user_id: a.user_id,
-                    ticket_id: newTicket.id,
+                    ticket_id: newTicket ? newTicket.id : null,
                     message: `Neues Ticket für deine Suche "${a.keyword}": ${title}`
                   });
                 }
@@ -199,10 +209,13 @@
             });
             
             if (notificationsToInsert.length > 0) {
-              await supabase.from("notifications").insert(notificationsToInsert);
+              const { error: notifErr } = await supabase.from("notifications").insert(notificationsToInsert);
+              if (notifErr) throw notifErr;
             }
           }
-        } catch(e) { console.error("Alerts error", e); }
+        } catch(e) { 
+          alert("Fehler bei den Benachrichtigungen (Bitte Screenshot machen): " + (e.message || JSON.stringify(e))); 
+        }
 
         alert("Ticket erfolgreich erstellt!");
         window.location.href = "index.html";
