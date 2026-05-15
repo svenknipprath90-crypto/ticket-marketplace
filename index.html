@@ -52,9 +52,20 @@
       </div>
     </div>
     
-    <div class="lang-toggle">
+    <div class="lang-toggle" style="display:flex; align-items:center; gap: 15px;">
+      <div id="bellContainer" style="display:none; position:relative; cursor:pointer;" onclick="toggleNotifications()">
+        <span style="font-size: 24px;">🔔</span>
+        <span id="bellDot" style="display:none; position:absolute; top:-5px; right:-5px; width:12px; height:12px; background:red; border-radius:50%; box-shadow:0 0 5px red;"></span>
+      </div>
       <button class="lang-btn" id="lang-de" onclick="setLanguage('de')">🇩🇪</button>
       <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">🇬🇧</button>
+    </div>
+  </div>
+  
+  <div id="notificationsModal" class="glass-panel" style="display:none; position:absolute; top: 80px; right: 20px; width: 300px; z-index: 200; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+    <h3 data-i18n="notificationsTitle" style="margin-top:0;">Benachrichtigungen</h3>
+    <div id="notificationsList" style="max-height: 300px; overflow-y: auto;">
+      <p style="color:var(--text-muted); font-size:14px;" data-i18n="noNotifications">Keine neuen Benachrichtigungen.</p>
     </div>
   </div>
 
@@ -81,8 +92,14 @@
   </div>
 
   <!-- FILTER -->
-  <div class="filter-bar" style="margin-bottom: 20px;">
+  <div class="filter-bar" style="margin-bottom: 20px; display: block;">
     <input type="text" id="searchInput" data-i18n="searchPlaceholder" placeholder="Suche..." onkeyup="filterTickets()" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.3); border:1px solid var(--glass-border); color:white; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
+    
+    <div id="subscribeBtnContainer" style="display:none; text-align:center; margin-bottom: 15px;">
+      <button class="btn btn-glass" style="color:#fbbf24; border-color:#fbbf24;" onclick="subscribeSearch()">
+        <span data-i18n="subscribeSearch">🔔 Suche abonnieren</span>
+      </button>
+    </div>
     
     <div class="category-bubbles" id="categoryBubbles">
       <button class="bubble active" onclick="setCategory('all')" data-i18n="cat_all">Alles</button>
@@ -144,6 +161,7 @@ function updateUI() {
 
   const myPurchasesBtn = document.getElementById("myPurchasesBtn");
   const adminBtn = document.getElementById("adminBtn");
+  const bellContainer = document.getElementById("bellContainer");
 
   if (currentUser) {
     userEl.innerText = "👤 " + currentUser;
@@ -151,6 +169,7 @@ function updateUI() {
     logoutBtn.style.display = "inline-flex";
     mySalesBtn.style.display = "inline-flex";
     myPurchasesBtn.style.display = "inline-flex";
+    bellContainer.style.display = "block";
     
     if (currentUser === "Gkcity1990") {
       adminBtn.style.display = "inline-flex";
@@ -167,6 +186,7 @@ function updateUI() {
     mySalesBtn.style.display = "none";
     myPurchasesBtn.style.display = "none";
     adminBtn.style.display = "none";
+    bellContainer.style.display = "none";
   }
 
   // Active language button
@@ -273,6 +293,13 @@ async function loadTickets() {
 }
 
 function filterTickets() {
+  const searchTerm = document.getElementById("searchInput").value.trim();
+  const subBtn = document.getElementById("subscribeBtnContainer");
+  if(searchTerm.length > 2 && currentUser) {
+    subBtn.style.display = "block";
+  } else {
+    subBtn.style.display = "none";
+  }
   render();
 }
 
@@ -308,6 +335,54 @@ async function checkNotifications() {
   } else {
     document.getElementById("purchasesDot").style.display = "none";
   }
+  
+  loadAlertNotifications();
+}
+
+// ================= SEARCH ALERTS =================
+async function loadAlertNotifications() {
+  if (!currentUser) return;
+  const { data } = await db.from("notifications").select("*").eq("user_id", currentUser).order("created_at", { ascending: false });
+  const list = document.getElementById("notificationsList");
+  
+  if (!data || data.length === 0) {
+    list.innerHTML = `<p style="color:var(--text-muted); font-size:14px;" data-i18n="noNotifications">Keine neuen Benachrichtigungen.</p>`;
+    document.getElementById("bellDot").style.display = "none";
+    applyTranslations();
+    return;
+  }
+  
+  let unread = false;
+  list.innerHTML = "";
+  data.forEach(n => {
+    if (!n.is_read) unread = true;
+    list.innerHTML += `
+      <div style="padding: 10px; border-bottom: 1px solid var(--glass-border); ${n.is_read ? 'opacity:0.6;' : 'font-weight:bold;'} cursor:pointer;" onclick="readNotification(${n.id}, ${n.ticket_id})">
+        <p style="margin:0; font-size:14px;">${n.message}</p>
+        <span style="font-size:10px; color:var(--text-muted);">${new Date(n.created_at).toLocaleString()}</span>
+      </div>
+    `;
+  });
+  
+  document.getElementById("bellDot").style.display = unread ? "block" : "none";
+}
+
+function toggleNotifications() {
+  const mod = document.getElementById("notificationsModal");
+  mod.style.display = mod.style.display === "none" ? "block" : "none";
+}
+
+async function readNotification(id, ticketId) {
+  await db.from("notifications").update({ is_read: true }).eq("id", id);
+  if (ticketId) window.location.href = `ticket.html?id=${ticketId}`;
+  else loadAlertNotifications();
+}
+
+async function subscribeSearch() {
+  const term = document.getElementById("searchInput").value.trim();
+  if(!term || !currentUser) return;
+  await db.from("search_alerts").insert({ user_id: currentUser, keyword: term });
+  alert(t("searchSubscribed"));
 }
 
 // ================= RENDER =================

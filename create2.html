@@ -156,7 +156,7 @@
 
       const currentUser = localStorage.getItem("pi_user") || "Unknown";
 
-      const { error } = await supabase.from("tickets").insert([
+      const { data: insertData, error } = await supabase.from("tickets").insert([
         {
           title: title,
           category: category,
@@ -169,13 +169,41 @@
           image3: imageUrl3,
           seller: currentUser
         }
-      ]);
+      ]).select();
 
       if (error) {
         alert("Datenbank Fehler: " + (error.message || JSON.stringify(error)));
         document.getElementById("createBtn").innerText = "Ticket speichern";
         document.getElementById("createBtn").disabled = false;
       } else {
+        const newTicket = insertData[0];
+        
+        try {
+          const { data: alerts } = await supabase.from("search_alerts").select("*");
+          if (alerts && alerts.length > 0) {
+            const matchedUsers = new Set();
+            const notificationsToInsert = [];
+            
+            alerts.forEach(a => {
+              const kw = a.keyword.toLowerCase();
+              if ((title.toLowerCase().includes(kw) || category.toLowerCase().includes(kw) || location.toLowerCase().includes(kw)) && a.user_id !== currentUser) {
+                if (!matchedUsers.has(a.user_id)) {
+                  matchedUsers.add(a.user_id);
+                  notificationsToInsert.push({
+                    user_id: a.user_id,
+                    ticket_id: newTicket.id,
+                    message: `Neues Ticket für deine Suche "${a.keyword}": ${title}`
+                  });
+                }
+              }
+            });
+            
+            if (notificationsToInsert.length > 0) {
+              await supabase.from("notifications").insert(notificationsToInsert);
+            }
+          }
+        } catch(e) { console.error("Alerts error", e); }
+
         alert("Ticket erfolgreich erstellt!");
         window.location.href = "index.html";
       }
