@@ -319,24 +319,32 @@ function setCategory(cat) {
 // ================= NOTIFICATIONS =================
 async function checkNotifications() {
   if(!currentUser) return;
-  
-  // Check if seller has paid orders (needs shipping)
-  const { data: salesInfo } = await db.from("orders").select("id").eq("seller", currentUser).eq("status", "paid");
-  if(salesInfo && salesInfo.length > 0) {
-    document.getElementById("salesDot").style.display = "block";
-  } else {
-    document.getElementById("salesDot").style.display = "none";
-  }
 
-  // Check if buyer has shipped orders (needs rating/confirmation)
-  const { data: purchaseInfo } = await db.from("orders").select("id").eq("buyer", currentUser).eq("status", "shipped");
-  if(purchaseInfo && purchaseInfo.length > 0) {
-    document.getElementById("purchasesDot").style.display = "block";
-  } else {
-    document.getElementById("purchasesDot").style.display = "none";
+  try {
+    await loadAlertNotifications();
+  } catch (e) {
+    alert("Debug Error in loadAlertNotifications: " + e.message);
   }
   
-  loadAlertNotifications();
+  try {
+    // Check if seller has paid orders (needs shipping)
+    const { data: salesInfo } = await db.from("orders").select("id").eq("seller", currentUser).eq("status", "paid");
+    if(salesInfo && salesInfo.length > 0) {
+      document.getElementById("salesDot").style.display = "block";
+    } else {
+      document.getElementById("salesDot").style.display = "none";
+    }
+
+    // Check if buyer has shipped orders (needs rating/confirmation)
+    const { data: purchaseInfo } = await db.from("orders").select("id").eq("buyer", currentUser).eq("status", "shipped");
+    if(purchaseInfo && purchaseInfo.length > 0) {
+      document.getElementById("purchasesDot").style.display = "block";
+    } else {
+      document.getElementById("purchasesDot").style.display = "none";
+    }
+  } catch(e) {
+    console.error(e);
+  }
 }
 
 // ================= SEARCH ALERTS =================
