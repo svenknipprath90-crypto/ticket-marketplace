@@ -73,8 +73,10 @@
     </div>
 
     <div class="form-group">
-      <label data-i18n="image">Neues Bild (optional):</label>
+      <label data-i18n="image">Neue Bilder (optional, bis zu 3):</label>
       <input type="file" id="image" accept="image/*">
+      <input type="file" id="image2" accept="image/*" style="margin-top: 10px;">
+      <input type="file" id="image3" accept="image/*" style="margin-top: 10px;">
     </div>
 
     <button id="saveBtn" class="btn btn-success" style="width: 100%; font-size: 18px;" data-i18n="saveBtn" onclick="saveTicket()">
@@ -137,6 +139,8 @@
       const quantity = document.getElementById("quantity").value || 1;
       const description = document.getElementById("description").value.trim();
       const file = document.getElementById("image").files[0];
+      const file2 = document.getElementById("image2").files[0];
+      const file3 = document.getElementById("image3").files[0];
 
       if(!title || !priceStr) {
         alert("Titel und Preis sind erforderlich!");
@@ -162,17 +166,23 @@
         description: description
       };
 
-      if (file) {
-        const fileName = Date.now() + "_" + file.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
-        const { data, error: uploadError } = await supabase.storage.from("tickets").upload(fileName, file);
+      async function uploadFile(f) {
+        if (!f) return null;
+        const fileName = Date.now() + "_" + f.name.replace(/[^a-zA-Z0-9.\-_]/g, '');
+        const { data, error } = await supabase.storage.from("tickets").upload(fileName, f);
+        if (error) throw error;
+        return `https://rucejmhjgfvlntoxhczm.supabase.co/storage/v1/object/public/tickets/${fileName}`;
+      }
 
-        if (uploadError) {
-          alert("Upload Fehler: " + (uploadError.message || JSON.stringify(uploadError)));
-          document.getElementById("saveBtn").innerText = "Ticket speichern";
-          document.getElementById("saveBtn").disabled = false;
-          return;
-        }
-        updates.image = `https://rucejmhjgfvlntoxhczm.supabase.co/storage/v1/object/public/tickets/${fileName}`;
+      try {
+        if (file) updates.image = await uploadFile(file);
+        if (file2) updates.image2 = await uploadFile(file2);
+        if (file3) updates.image3 = await uploadFile(file3);
+      } catch (uploadError) {
+        alert("Upload Fehler: " + (uploadError.message || JSON.stringify(uploadError)));
+        document.getElementById("saveBtn").innerText = "Ticket speichern";
+        document.getElementById("saveBtn").disabled = false;
+        return;
       }
 
       const { error } = await supabase.from("tickets").update(updates).eq("id", ticketId).eq("seller", currentUser);

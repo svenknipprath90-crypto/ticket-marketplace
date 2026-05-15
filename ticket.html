@@ -180,7 +180,16 @@ async function render(tData, isVerified) {
     `;
   };
 
-  const imageHtml = tData.image ? `<img src="${tData.image}" class="ticket-detail-img" onclick="openLightbox('${tData.image}')">` : "";
+  const imageHtml = tData.image ? `<img src="${tData.image}" id="mainImage" class="ticket-detail-img" onclick="openLightbox(this.src)">` : "";
+  
+  let galleryHtml = "";
+  if (tData.image2 || tData.image3) {
+    galleryHtml = `<div style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto;">`;
+    if (tData.image) galleryHtml += `<img src="${tData.image}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 10px; cursor: pointer; border: 2px solid var(--glass-border);" onclick="document.getElementById('mainImage').src=this.src">`;
+    if (tData.image2) galleryHtml += `<img src="${tData.image2}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 10px; cursor: pointer; border: 2px solid var(--glass-border);" onclick="document.getElementById('mainImage').src=this.src">`;
+    if (tData.image3) galleryHtml += `<img src="${tData.image3}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 10px; cursor: pointer; border: 2px solid var(--glass-border);" onclick="document.getElementById('mainImage').src=this.src">`;
+    galleryHtml += `</div>`;
+  }
   const locationHtml = tData.location ? `<p><strong>${t("location")}:</strong> ${tData.location}</p>` : "";
   const availableText = t("available", { n: maxQty });
   const verifiedIcon = isVerified ? '<span class="verified-badge" title="Verifizierter Verkäufer">☑️</span>' : '';
@@ -188,6 +197,7 @@ async function render(tData, isVerified) {
 
   document.getElementById("content").innerHTML = `
     ${imageHtml}
+    ${galleryHtml}
     <h1 style="margin-top:0;">${tData.title}</h1>
     <span class="tag" style="font-size:14px;">${tData.category}</span>
     
