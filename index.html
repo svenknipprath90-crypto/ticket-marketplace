@@ -342,9 +342,14 @@ async function checkNotifications() {
 // ================= SEARCH ALERTS =================
 async function loadAlertNotifications() {
   if (!currentUser) return;
-  const { data } = await db.from("notifications").select("*").eq("user_id", currentUser).order("created_at", { ascending: false });
+  const { data, error } = await db.from("notifications").select("*").eq("user_id", currentUser).order("created_at", { ascending: false });
   const list = document.getElementById("notificationsList");
   
+  if (error) {
+    console.error("Notifications Error:", error);
+    alert("Debug Notifications Error: " + error.message);
+  }
+
   if (!data || data.length === 0) {
     list.innerHTML = `<p style="color:var(--text-muted); font-size:14px;" data-i18n="noNotifications">Keine neuen Benachrichtigungen.</p>`;
     document.getElementById("bellDot").style.display = "none";
