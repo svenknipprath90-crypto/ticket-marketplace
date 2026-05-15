@@ -323,7 +323,7 @@ async function checkNotifications() {
   try {
     await loadAlertNotifications();
   } catch (e) {
-    alert("Debug Error in loadAlertNotifications: " + e.message);
+    console.error(e);
   }
   
   try {
@@ -355,10 +355,7 @@ async function loadAlertNotifications() {
   
   if (error) {
     console.error("Notifications Error:", error);
-    alert("Debug Notifications Error: " + error.message);
   }
-
-  alert("Debug: Suche nach Benachrichtigungen für User '" + currentUser + "'. Gefunden: " + (data ? data.length : 0));
 
   if (!data || data.length === 0) {
     list.innerHTML = `<p style="color:var(--text-muted); font-size:14px;" data-i18n="noNotifications">Keine neuen Benachrichtigungen.</p>`;
@@ -370,7 +367,7 @@ async function loadAlertNotifications() {
   let unread = false;
   list.innerHTML = "";
   data.forEach(n => {
-    if (!n.is_read) unread = true;
+    if (n.is_read !== true) unread = true;
     list.innerHTML += `
       <div style="padding: 10px; border-bottom: 1px solid var(--glass-border); ${n.is_read ? 'opacity:0.6;' : 'font-weight:bold;'} cursor:pointer;" onclick="readNotification(${n.id}, ${n.ticket_id})">
         <p style="margin:0; font-size:14px;">${n.message}</p>
