@@ -186,7 +186,7 @@
             
             alerts.forEach(a => {
               const kw = a.keyword.toLowerCase();
-              if ((title.toLowerCase().includes(kw) || category.toLowerCase().includes(kw) || location.toLowerCase().includes(kw)) && a.user_id !== currentUser) {
+              if (title.toLowerCase().includes(kw) || category.toLowerCase().includes(kw) || location.toLowerCase().includes(kw)) {
                 if (!matchedUsers.has(a.user_id)) {
                   matchedUsers.add(a.user_id);
                   notificationsToInsert.push({

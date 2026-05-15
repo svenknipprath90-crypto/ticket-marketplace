@@ -52,10 +52,10 @@
       </div>
     </div>
     
-    <div class="lang-toggle" style="display:flex; align-items:center; gap: 15px;">
+    <div class="lang-toggle" style="display:flex; align-items:center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
       <div id="bellContainer" style="display:none; position:relative; cursor:pointer;" onclick="toggleNotifications()">
-        <span style="font-size: 24px;">🔔</span>
-        <span id="bellDot" style="display:none; position:absolute; top:-5px; right:-5px; width:12px; height:12px; background:red; border-radius:50%; box-shadow:0 0 5px red;"></span>
+        <span style="font-size: 24px; margin-right: 10px;">🔔</span>
+        <span id="bellDot" style="display:none; position:absolute; top:-5px; right: 5px; width:12px; height:12px; background:red; border-radius:50%; box-shadow:0 0 5px red;"></span>
       </div>
       <button class="lang-btn" id="lang-de" onclick="setLanguage('de')">🇩🇪</button>
       <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">🇬🇧</button>
